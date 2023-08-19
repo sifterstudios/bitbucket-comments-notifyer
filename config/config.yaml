@@ -1,0 +1,7 @@
+bitbucket:
+  server_url: https://your-bitbucket-server-url.com
+  username: your-username
+  password: your-password
+
+notification:
+  polling_interval: 5 # In minutes
