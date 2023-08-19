@@ -1,31 +1,54 @@
 package main
 
 import (
+	"crypto/rand"
 	"fmt"
-	"io/ioutil"
-	"net/http"
+	"os"
 )
 
+const (
+	securityFile = "data/.securi.ty"
+)
+
+var secretKey [32]byte
+
 func main() {
-	http.HandleFunc("/webhook", func(w http.ResponseWriter, r *http.Request) {
-		// Read the incoming webhoob payload
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, "Error reading request body", http.StatusBadRequest)
-			return
-		}
+	if securityFileExists() {
+		getSecretKey()
+	} else {
+		getRandomKey()
+		createAndSaveSecurityFile()
+	}
+}
 
-		// Process the payload (e.g. validate, trigger actions, etc.)
-		// You'll need to implement your Bitbucket event handling logic here
+func createAndSaveSecurityFile() {
+	os.Create(securityFile)
+	err := os.WriteFile(securityFile, secretKey[:], 0600)
+	if err != nil {
+		panic(err)
+	}
 
-		fmt.Println("Received webhook payload:")
-		fmt.Println(string(body))
+	fmt.Println("Security file created.")
+}
 
-		w.WriteHeader(http.StatusOK)
-	})
+func getSecretKey() {
+	data, err := os.ReadFile(securityFile)
+	if err != nil {
+		data = []byte("")
+	}
 
-	// Start the server on port 8080
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		fmt.Println("Error starting server:", err)
+	secretKey = [32]byte(data)
+}
+
+func securityFileExists() bool {
+	if _, err := os.Stat(securityFile); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
+func getRandomKey() {
+	if _, err := rand.Read(secretKey[:]); err != nil {
+		panic(err)
 	}
 }
