@@ -1,32 +1,28 @@
-from atlassian import Bitbucket
 import configparser
 import os
+from pprint import pprint
+
+from atlassian import Bitbucket
+
 
 def read_config():
-    config = configparser.ConfigParser()
-    config_path = os.path.join(os.path.dirname(__file__), '..', 'config.ini')
-    config.read(config_path)
-    return config
+    config_file = configparser.ConfigParser()
+    config_file_path = os.path.join(os.path.dirname(__file__), '..', 'config.ini')
+    config_file.read(config_file_path)
+    return config_file
 
-def fetch_comments(bitbucket, repo_slug):
-    # Fetch the list of comments from a repository
-    comments = bitbucket.comments.get_comments(repo_slug=repo_slug)
-    return comments
 
 if __name__ == "__main__":
-    repository_slug = "repo-name"
-
     config = read_config()
+    jira_url = config["bitbucket"]["jira"]
     bitbucket_url = config["bitbucket"]["url"]
-    access_token = config["bitbucket"]["access_token"]
 
-    try:
-        bitbucket = Bitbucket(url=bitbucket_url, access_token=access_token)
-        comments = fetch_comments(bitbucket, repository_slug)
+    bitbucket = Bitbucket(url=bitbucket_url,
+                          username=config["bitbucket"]["username"],
+                          password=config["bitbucket"]["password"])
+
+    pull_requests = bitbucket.check_inbox_pull_requests(role='author')
+    # TODO: Find out and save how many comments are made on each pull request
         
-        for comment in comments:
-            print(f"Author: {comment['author']['user']['displayName']}")
-            print(f"Comment: {comment['text']}")
-            print("=" * 30)
-    except Exception as e:
-        print("An error occurred:", e)
+
+
