@@ -2,8 +2,8 @@ package auth
 
 import "crypto/rand"
 
-func GenerateKey() (*[32]byte, error) {
-	var key [32]byte
+func GenerateKey() (*[]byte, error) {
+	var key []byte
 	_, err := rand.Read(key[:])
 	if err != nil {
 		return nil, err

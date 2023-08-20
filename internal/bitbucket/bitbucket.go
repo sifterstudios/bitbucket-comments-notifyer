@@ -13,7 +13,7 @@ func NewBitbucketClient(baseUrl, username, password string) *BitbucketClient {
 	return nil
 }
 
-func (bb *BitbucketClient) FetchEvents() ([]Event, error) {
+func (bb *BitbucketClient) FetchEvents() error {
 	// TODO: Implement event fetching
 	return nil
 }

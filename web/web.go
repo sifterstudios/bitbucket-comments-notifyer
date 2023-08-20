@@ -1,4 +1,4 @@
-package main
+package web
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ func main() {
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
 
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "templates/index.html")
+		http.ServeFile(w, r, "web/templates/index.html")
 	})
 
 	fmt.Println("Listening on port 8080")

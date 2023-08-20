@@ -1,54 +1,20 @@
 package main
 
 import (
-	"crypto/rand"
 	"fmt"
-	"os"
+
+	data "github.com/sifterstudios/bitbucket-comments-notifyer/data"
 )
 
-const (
-	securityFile = "data/.securi.ty"
+var (
+	secretKey [32]byte
+	config    data.Config
 )
-
-var secretKey [32]byte
 
 func main() {
-	if securityFileExists() {
-		getSecretKey()
-	} else {
-		getRandomKey()
-		createAndSaveSecurityFile()
-	}
-}
-
-func createAndSaveSecurityFile() {
-	os.Create(securityFile)
-	err := os.WriteFile(securityFile, secretKey[:], 0600)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println("Security file created.")
-}
-
-func getSecretKey() {
-	data, err := os.ReadFile(securityFile)
-	if err != nil {
-		data = []byte("")
-	}
-
-	secretKey = [32]byte(data)
-}
-
-func securityFileExists() bool {
-	if _, err := os.Stat(securityFile); os.IsNotExist(err) {
-		return false
-	}
-	return true
-}
-
-func getRandomKey() {
-	if _, err := rand.Read(secretKey[:]); err != nil {
-		panic(err)
-	}
+	fmt.Println("Welcome!")
+	fmt.Println("Looking up config file...")
+	initialize()
+	fmt.Println("Config file loaded!")
+	fmt.Println(string(config.Credentials.Username))
 }

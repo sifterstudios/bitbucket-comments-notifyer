@@ -28,30 +28,30 @@ func Decrypt(data []byte, secretKey *[32]byte) ([]byte, error) {
 	return decrypted, nil
 }
 
-func SaveEncryptedCredentials(username, password string, secretKey *[32]byte) error {
+func EncryptCredentials(username, password []byte, secretKey *[32]byte) ([]byte, []byte, error) {
 	encryptedUsername, err := Encrypt([]byte(username), secretKey)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
 	encryptedPassword, err := Encrypt([]byte(password), secretKey)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
-	return nil
+	return encryptedUsername, encryptedPassword, nil
 }
 
-func GetDecryptedCredentials(secretKey *[32]byte) (string, string, error) {
+func DecryptCredentials(secretKey *[32]byte, encryptedUsername, encryptedPassword []byte) ([]byte, []byte, error) {
 	decryptedUsername, err := Decrypt(encryptedUsername, secretKey)
 	if err != nil {
-		return "", "", err
+		return nil, nil, err
 	}
 
 	decryptedPassword, err := Decrypt(encryptedPassword, secretKey)
 	if err != nil {
-		return "", "", err
+		return nil, nil, err
 	}
 
-	return string(decryptedUsername), string(decryptedPassword), nil
+	return decryptedUsername, decryptedPassword, nil
 }
