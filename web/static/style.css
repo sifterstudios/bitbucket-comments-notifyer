@@ -1,70 +1,84 @@
-/* web/static/style.css */
-
-/* Reset some default styles */
-body,
-h1,
-p {
+body, p, select, input[type="checkbox"], button {
   margin: 0;
   padding: 0;
+  font-family: 'Open Sans', sans-serif;
+  color: #abb2bf;
 }
 
-/* Set a background color and font family */
 body {
-  background-color: #f0f0f0;
-  font-family: Arial, sans-serif;
+  background-color: #282c34;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
 }
 
-/* Header styles */
 h1 {
   text-align: center;
   padding: 20px;
-  background-color: #333;
-  color: #fff;
+  background-color: #3e4451;
+  color: #61afef;
 }
 
-/* Container styles */
 .container {
   max-width: 800px;
-  margin: 0 auto;
   padding: 20px;
-  background-color: #fff;
+  background-color: #5c6370;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+  width: 100%;
+  margin: 10px;
 }
 
-/* Form styles */
 label {
   display: block;
   margin-bottom: 5px;
+  color: #abb2bf;
 }
 
-select,
-input[type="checkbox"] {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+.monitoring {
+  color: #61afef;
 }
 
-button {
-  display: block;
-  background-color: #333;
-  color: #fff;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
+#save-button {
+  background-color: #98c379;
+  color: #03070C;
   cursor: pointer;
 }
 
-/* Statistics styles */
 h2 {
   margin-top: 20px;
+  color: #61afef;
 }
 
-/* Footer styles */
 footer {
   text-align: center;
   padding: 10px;
-  background-color: #333;
-  color: #fff;
+  background-color: #3e4451;
+  color: #abb2bf;
+}
+
+button {
+  background-color: #3e4451;
+  color: #abb2bf;
+  padding: 15px;
+
+  margin: 10px;
+}
+
+select {
+  background-color: #3e4451;
+  color: #abb2bf;
+  width: auto;
+  max-width: 100%;
+}
+
+input[type="checkbox"] {
+  vertical-align: middle;
+  accent-color: #61afef;
+}
+
+.checkbox-text {
+  display: inline;
+  color: #61afef;
 }

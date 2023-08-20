@@ -2,6 +2,7 @@ package bitbucket
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/go-resty/resty/v2"
 
@@ -31,7 +32,7 @@ func getActivePullRequestsByUser(config data.Config) {
 	fmt.Println("Response Body: ", resp.String())
 }
 
-func getPullRequestActivity(data.Value) {
+func getPullRequestActivity(response data.PullRequestActivityResponse) {
 	// Original string
 	url := "/rest/api/latest/projects/projectname/repos/reponame/pull-requests/PR-id/activities"
 
