@@ -1,5 +1,7 @@
 package data
 
+var UserConfig Config
+
 type Config struct {
 	Bitbucket struct {
 		ServerUrl string `yaml:"server_url"`

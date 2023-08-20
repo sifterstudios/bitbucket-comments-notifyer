@@ -3,10 +3,14 @@ package web
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/sifterstudios/bitbucket-comments-notifyer/internal/notification"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
+
+	"github.com/sifterstudios/bitbucket-comments-notifyer/data"
+	"github.com/sifterstudios/bitbucket-comments-notifyer/internal/bitbucket"
+	"github.com/sifterstudios/bitbucket-comments-notifyer/internal/notification"
 )
 
 func StartWebServer() {
@@ -18,19 +22,25 @@ func StartWebServer() {
 		http.ServeFile(w, r, "../web/templates/index.html")
 	})
 	r.HandleFunc("/send-notification", sendNotificationHandler).Methods("POST")
-	r.HandleFunc("/manual-update", manualUpdateHandler).Methods("POST")
+	r.HandleFunc("/manual-update", manualUpdateHandler).Methods("GET")
 
 	fmt.Println("Listening on port 8080")
 	http.ListenAndServe(":8080", r)
 }
 
 func manualUpdateHandler(writer http.ResponseWriter, request *http.Request) {
-
+	response, err := bitbucket.GetActivePullRequestsByUser(data.UserConfig)
+	if err != nil {
+		log.Print(err)
+	}
+	uiStats := data.ConvertActivePrResponseToUiStatistics(response)
+	fmt.Println(uiStats)
+	jsonUiStats, err := json.Marshal(uiStats)
+	writer.Write(jsonUiStats)
 }
 
 func sendNotificationHandler(writer http.ResponseWriter, request *http.Request) {
 	err := notification.SendNotification("Test notification", "It just works! :D")
-
 	if err != nil {
 		http.Error(writer, "Failed to send notification", http.StatusInternalServerError)
 		return
@@ -40,6 +50,8 @@ func sendNotificationHandler(writer http.ResponseWriter, request *http.Request) 
 		"message": "Notification sent successfully, look top right!",
 	}
 	writer.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(writer).Encode(response)
-
+	err = json.NewEncoder(writer).Encode(response)
+	if err != nil {
+		return
+	}
 }

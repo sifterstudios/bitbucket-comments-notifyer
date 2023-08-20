@@ -28,9 +28,9 @@ document.addEventListener("DOMContentLoaded", function () {
         updateStatsFromBackend()
             .then(data => {
                 if (!!data) {
-                    lastUpdate.textContent = new Date(data.lastUpdate).toLocaleString();
-                    activePRComments.textContent = data.numberOfActivePrComments;
-                    activePRTasks.textContent = data.numberOfActivePrTasks;
+                    lastUpdate.textContent = new Date(data.LastUpdate * 1000).toLocaleString();
+                    activePRComments.textContent = data.NumberOfActivePrComments;
+                    activePRTasks.textContent = data.NumberOfActivePrTasks;
                 }
             })
 
@@ -60,7 +60,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 function updateStatsFromBackend() {
     return fetch("/manual-update", {
-        method: "POST",
+        method: "GET",
     })
         .then(response => {
             if (!response.ok) {

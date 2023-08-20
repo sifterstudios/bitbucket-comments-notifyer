@@ -20,7 +20,7 @@ func initialize() {
 		createAndSaveSecurityFile()
 	}
 	if fileExists(data.ConfigFile) {
-		config = getConfig()
+		data.UserConfig = getConfig()
 	} else {
 		createAndSaveConfigFile()
 	}
@@ -47,13 +47,13 @@ func createAndSaveConfigFile() {
 		panic(err)
 	}
 
-	config.Credentials.Username = encryptedUsername
-	config.Credentials.Password = encryptedPassword
-	config.Bitbucket.ServerUrl = address
+	data.UserConfig.Credentials.Username = encryptedUsername
+	data.UserConfig.Credentials.Password = encryptedPassword
+	data.UserConfig.Bitbucket.ServerUrl = address
 	fmt.Println("Username: " + username)
 	fmt.Println("Encrypted Username: " + string(encryptedUsername))
 
-	configFile, err := yaml.Marshal(config)
+	configFile, err := yaml.Marshal(data.UserConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -63,8 +63,8 @@ func createAndSaveConfigFile() {
 		log.Fatal(err)
 	}
 
-	config.Credentials.Username = []byte(username)
-	config.Credentials.Password = []byte(password)
+	data.UserConfig.Credentials.Username = []byte(username)
+	data.UserConfig.Credentials.Password = []byte(password)
 }
 
 func createAndSaveSecurityFile() {

@@ -1,6 +1,7 @@
 package bitbucket
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -9,7 +10,7 @@ import (
 	"github.com/sifterstudios/bitbucket-comments-notifyer/data"
 )
 
-func getActivePullRequestsByUser(config data.Config) {
+func GetActivePullRequestsByUser(config data.Config) (data.ActivePullRequestsResponse, error) {
 	client := resty.New()
 
 	apiUrl := config.Bitbucket.ServerUrl + data.ActivePullRequestsApiPath
@@ -28,11 +29,21 @@ func getActivePullRequestsByUser(config data.Config) {
 	} else {
 		fmt.Printf("GET request failed with status code: %d\n", resp.StatusCode())
 	}
+	r := resp.Body()
 
-	fmt.Println("Response Body: ", resp.String())
+	var jsonData data.ActivePullRequestsResponse
+
+	jsonErr := json.Unmarshal(r, &jsonData)
+	if jsonErr != nil {
+		return data.ActivePullRequestsResponse{}, jsonErr
+	}
+
+	// fmt.Println("Response Body: ", resp.String())
+	// fmt.Println("Response Body: ", jsonData)
+	return jsonData, nil
 }
 
-func getPullRequestActivity(response data.PullRequestActivityResponse) {
+func GetPullRequestActivity() (response data.PullRequestActivityResponse) {
 	// Original string
 	url := "/rest/api/latest/projects/projectname/repos/reponame/pull-requests/PR-id/activities"
 
@@ -50,4 +61,5 @@ func getPullRequestActivity(response data.PullRequestActivityResponse) {
 
 	// Print the updated string
 	fmt.Println(url)
+	return data.PullRequestActivityResponse{}
 }

@@ -3,14 +3,10 @@ package main
 import (
 	"fmt"
 
-	data "github.com/sifterstudios/bitbucket-comments-notifyer/data"
 	"github.com/sifterstudios/bitbucket-comments-notifyer/web"
 )
 
-var (
-	secretKey [32]byte
-	config    data.Config
-)
+var secretKey [32]byte
 
 func main() {
 	fmt.Println("Welcome!")
