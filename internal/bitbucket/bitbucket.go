@@ -1,19 +1,32 @@
 package bitbucket
 
 import (
+	"fmt"
+
 	"github.com/go-resty/resty/v2"
+
+	"github.com/sifterstudios/bitbucket-comments-notifyer/data"
 )
 
-type BitbucketClient struct {
-	client *resty.Client
-}
+func getActivePullRequestsByUser(config data.Config) {
+	client := resty.New()
 
-func NewBitbucketClient(baseUrl, username, password string) *BitbucketClient {
-	// TODO: Initialize and configure the client
-	return nil
-}
+	apiUrl := config.Bitbucket.ServerUrl + data.ActivePullRequestsApiPath
+	username := string(config.Credentials.Username)
+	password := string(config.Credentials.Password)
 
-func (bb *BitbucketClient) FetchEvents() error {
-	// TODO: Implement event fetching
-	return nil
+	client.SetBasicAuth(username, password)
+
+	resp, err := client.R().Get(apiUrl)
+	if err != nil {
+		panic(err)
+	}
+
+	if resp.StatusCode() == 200 {
+		fmt.Println("Success!")
+	} else {
+		fmt.Printf("GET request failed with status code: %d\n", resp.StatusCode())
+	}
+
+	fmt.Println("Response Body: ", resp.String())
 }
