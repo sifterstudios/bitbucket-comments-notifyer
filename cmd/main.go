@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	data "github.com/sifterstudios/bitbucket-comments-notifyer/data"
+	"github.com/sifterstudios/bitbucket-comments-notifyer/web"
 )
 
 var (
@@ -16,5 +17,7 @@ func main() {
 	fmt.Println("Looking up config file...")
 	initialize()
 	fmt.Println("Config file loaded!")
-	fmt.Println(string(config.Credentials.Username))
+	fmt.Println("Starting Web Server...")
+
+	web.StartWebServer()
 }
