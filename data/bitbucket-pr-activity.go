@@ -1,5 +1,12 @@
 package data
 
+type PullRequestActivityResponse struct {
+	Size       int        `json:"size"`
+	Limit      int        `json:"limit"`
+	IsLastPage bool       `json:"isLastPage"`
+	Values     []Activity `json:"values"`
+	Start      int        `json:"start"`
+}
 type Comment struct {
 	Properties          CommentProperties `json:"properties"`
 	ID                  int               `json:"id"`
@@ -90,7 +97,7 @@ type CommentAnchor struct {
 	Orphaned bool   `json:"orphaned"`
 }
 
-type Value struct {
+type Activity struct {
 	ID            int           `json:"id"`
 	CreatedDate   int64         `json:"createdDate"`
 	User          User          `json:"user"`

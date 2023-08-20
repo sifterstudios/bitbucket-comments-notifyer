@@ -1,13 +1,5 @@
 package data
 
-type BitbucketResponse struct {
-	Size       int           `json:"size"`
-	Limit      int           `json:"limit"`
-	IsLastPage bool          `json:"isLastPage"`
-	Values     []PullRequest `json:"values"`
-	Start      int           `json:"start"`
-}
-
 type User struct {
 	Name         string `json:"name"`
 	EmailAddress string `json:"emailAddress"`

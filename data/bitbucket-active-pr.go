@@ -1,5 +1,12 @@
 package data
 
+type ActivePullRequestsResponse struct {
+	Size       int           `json:"size"`
+	Limit      int           `json:"limit"`
+	IsLastPage bool          `json:"isLastPage"`
+	Values     []PullRequest `json:"values"`
+	Start      int           `json:"start"`
+}
 type PullRequest struct {
 	ID           int        `json:"id"`
 	Version      int        `json:"version"`

@@ -30,3 +30,23 @@ func getActivePullRequestsByUser(config data.Config) {
 
 	fmt.Println("Response Body: ", resp.String())
 }
+
+func getPullRequestActivity(data.Value) {
+	// Original string
+	url := "/rest/api/latest/projects/projectname/repos/reponame/pull-requests/PR-id/activities"
+
+	// Define replacements
+	replacements := map[string]string{
+		"projectname": "newproject",
+		"reponame":    "newrepo",
+		"PR-id":       "newPRid",
+	}
+
+	// Replace each placeholder
+	for placeholder, replacement := range replacements {
+		url = strings.ReplaceAll(url, placeholder, replacement)
+	}
+
+	// Print the updated string
+	fmt.Println(url)
+}
