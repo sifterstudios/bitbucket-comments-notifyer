@@ -35,7 +35,7 @@ func createAndSaveConfigFile() {
 	var password string
 	fmt.Scanln(&password)
 
-	fmt.Println("Please enter the address for the bitbucket server:")
+	fmt.Println("Please enter the full address for the bitbucket server(e.g: https://bitbucket.example.com):")
 	var address string
 	fmt.Scanln(&address)
 
@@ -53,6 +53,8 @@ func createAndSaveConfigFile() {
 	fmt.Println("Username: " + username)
 	fmt.Println("Encrypted Username: " + string(encryptedUsername))
 
+	getDefaultSettings(&data.UserConfig)
+
 	configFile, err := yaml.Marshal(data.UserConfig)
 	if err != nil {
 		log.Fatal(err)
@@ -65,6 +67,14 @@ func createAndSaveConfigFile() {
 
 	data.UserConfig.Credentials.Username = []byte(username)
 	data.UserConfig.Credentials.Password = []byte(password)
+}
+
+func getDefaultSettings(config *data.Config) {
+	config.Notification.PollingInterval = 5
+	config.Notification.Comments = true
+	config.Notification.Tasks = true
+	config.Notification.StatusChanges = true
+	config.Notification.CompletionTime = true
 }
 
 func createAndSaveSecurityFile() {

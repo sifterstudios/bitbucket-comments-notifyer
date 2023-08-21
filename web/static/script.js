@@ -10,6 +10,13 @@ document.addEventListener("DOMContentLoaded", function () {
   const activePRTasks = document.getElementById("active-pr-tasks");
   const manualButton = document.getElementById("update-button");
   const testButton = document.getElementById("test-button");
+  const notifyCommentsCheckbox = document.getElementById("notify-comments");
+  const notifyTasksCheckbox = document.getElementById("notify-tasks");
+  const notifyStatusCheckbox = document.getElementById("notify-status");
+  const monitoringFrequencyInput = document.getElementById(
+    "monitoring-frequency"
+  );
+  const notifyCompletionCheckbox = document.getElementById("notify-completion");
 
   // Save Configuration
   saveButton.addEventListener("click", function () {
@@ -37,6 +44,13 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   updateStatistics();
+  updatePreferences(
+    monitoringFrequencyInput,
+    notifyCommentsCheckbox,
+    notifyTasksCheckbox,
+    notifyStatusCheckbox,
+    notifyCompletionCheckbox
+  );
 
   setInterval(updateStatistics, 30000);
 
@@ -98,6 +112,44 @@ function updateStatistics() {
   });
 }
 
+function updatePreferences(
+  monitoringFrequencyInput,
+  notifyCommentsCheckbox,
+  notifyTasksCheckbox,
+  notifyStatusCheckbox,
+  notifyCompletionCheckbox
+) {
+  getPrefsFromBackEnd().then((data) => {
+    monitoringFrequencyInput.value = data?.PollingInterval;
+    notifyCommentsCheckbox.checked = data?.Comments;
+    notifyTasksCheckbox.checked = data?.Tasks;
+    notifyStatusCheckbox.checked = data?.StatusChanges;
+    notifyCompletionCheckbox.checked = data?.CompletionTime;
+  });
+}
+async function getPrefsFromBackEnd() {
+  try {
+    const response = await fetch("/config", {
+      method: "GET",
+    });
+
+    if (!response.ok) {
+      throw new Error("Network response was not ok: " + response.status);
+    }
+
+    const data = await response.json();
+
+    if (!!data) {
+      return data;
+    } else {
+      alert("Response was empty, but without error");
+      return null;
+    }
+  } catch (error) {
+    console.error("Error:", error);
+    return null;
+  }
+}
 async function getStatsFromBackEnd() {
   try {
     const response = await fetch("/stats", {
@@ -110,7 +162,7 @@ async function getStatsFromBackEnd() {
 
     const data = await response.json();
 
-    if (data) {
+    if (!!data) {
       return data;
     } else {
       alert("Response was empty, but without error");

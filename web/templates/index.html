@@ -12,6 +12,7 @@
       <label class="monitoring" for="monitoring-frequency"
         >Monitoring Frequency (minutes):
         <select id="monitoring-frequency">
+          <option value="1">1</option>
           <option value="5">5</option>
           <option value="10">10</option>
           <option value="30">30</option>
@@ -51,6 +52,17 @@
         />
         <label class="checkbox-text" for="notify-status"
           >Notify on status changes</label
+        >
+      </div>
+      <div>
+        <input
+          type="checkbox"
+          id="notify-completion"
+          name="notification"
+          value="status"
+        />
+        <label class="checkbox-text" for="notify-status"
+          >Notify of completion time (time from PR start to merge)</label
         >
       </div>
     </div>

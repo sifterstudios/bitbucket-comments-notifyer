@@ -23,9 +23,32 @@ func StartWebServer() {
 	})
 	r.HandleFunc("/send-notification", sendNotificationHandler).Methods("POST")
 	r.HandleFunc("/manual-update", manualUpdateHandler).Methods("GET")
+	r.HandleFunc("/stats", getStatsHandler).Methods("GET")
+	r.HandleFunc("/config", getConfig).Methods("GET")
 
 	fmt.Println("Listening on port 8080")
 	http.ListenAndServe(":8080", r)
+}
+
+func getStatsHandler(writer http.ResponseWriter, request *http.Request) {
+	response, err := bitbucket.GetActivePullRequestsByUser(data.UserConfig)
+	if err != nil {
+		log.Print(err)
+	}
+	uiStats := data.ConvertActivePrResponseToUiStatistics(response)
+	fmt.Println(uiStats)
+	jsonUiStats, err := json.Marshal(uiStats)
+	writer.Write(jsonUiStats)
+}
+
+func getConfig(writer http.ResponseWriter, request *http.Request) {
+	config := data.UserConfig.Notification
+	fmt.Println(config)
+	jsonUiStats, err := json.Marshal(config)
+	if err != nil {
+		fmt.Println(err)
+	}
+	writer.Write(jsonUiStats)
 }
 
 func manualUpdateHandler(writer http.ResponseWriter, request *http.Request) {

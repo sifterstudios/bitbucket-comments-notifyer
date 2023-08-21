@@ -7,7 +7,11 @@ type Config struct {
 		ServerUrl string `yaml:"server_url"`
 	} `yaml:"bitbucket"`
 	Notification struct {
-		PollingInterval int `yaml:"polling_interval"`
+		PollingInterval int  `yaml:"polling_interval"`
+		Comments        bool `yaml:"comments"`
+		Tasks           bool `yaml:"tasks"`
+		StatusChanges   bool `yaml:"status_changes"`
+		CompletionTime  bool `yaml:"completion_time"`
 	} `yaml:"notification"`
 	Credentials struct {
 		Username []byte `yaml:"username"`
