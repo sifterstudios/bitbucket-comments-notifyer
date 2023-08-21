@@ -24,8 +24,8 @@ document.addEventListener("DOMContentLoaded", function () {
     console.log("Notify on Status Changes:", statusChecked);
   });
 
-  function updateStatistics() {
-    updateStatsFromBackend().then((data) => {
+  function manualUpdate() {
+    getManualUpdateFromBackEnd().then((data) => {
       if (!!data) {
         lastUpdate.textContent = new Date(
           data.LastUpdate * 1000
@@ -41,26 +41,66 @@ document.addEventListener("DOMContentLoaded", function () {
   setInterval(updateStatistics, 30000);
 
   manualButton.addEventListener("click", function () {
-    updateStatistics();
+    manualUpdate();
   });
 
   testButton.addEventListener("click", function () {
-    fetch("/send-notification", {
-      method: "POST",
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        alert(data.message);
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-      });
+    sendNotification();
   });
 });
 
-async function updateStatsFromBackend() {
+function sendNotification() {
+  fetch("/send-notification", {
+    method: "POST",
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      alert(data.message);
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+    });
+}
+
+async function getManualUpdateFromBackEnd() {
   try {
     const response = await fetch("/manual-update", {
+      method: "GET",
+    });
+
+    if (!response.ok) {
+      throw new Error("Network response was not ok: " + response.status);
+    }
+
+    const data = await response.json();
+
+    if (data) {
+      return data;
+    } else {
+      alert("Response was empty, but without error");
+      return null;
+    }
+  } catch (error) {
+    console.error("Error:", error);
+    return null;
+  }
+}
+
+function updateStatistics() {
+  getStatsFromBackEnd().then((data) => {
+    if (!!data) {
+      lastUpdate.textContent = new Date(
+        data.LastUpdate * 1000
+      ).toLocaleString();
+      activePRComments.textContent = data.NumberOfActivePrComments;
+      activePRTasks.textContent = data.NumberOfActivePrTasks;
+    }
+  });
+}
+
+async function getStatsFromBackEnd() {
+  try {
+    const response = await fetch("/stats", {
       method: "GET",
     });
 
