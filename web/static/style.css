@@ -1,7 +1,11 @@
-body, p, select, input[type="checkbox"], button {
+body,
+p,
+select,
+input[type="checkbox"],
+button {
   margin: 0;
   padding: 0;
-  font-family: 'Open Sans', sans-serif;
+  font-family: "Open Sans", sans-serif;
   color: #abb2bf;
 }
 
@@ -23,7 +27,7 @@ h1 {
 .container {
   max-width: 800px;
   padding: 20px;
-  background-color: #5c6370;
+  background-color: #3e4451;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   border-radius: 5px;
   width: 100%;
@@ -42,7 +46,7 @@ label {
 
 #save-button {
   background-color: #98c379;
-  color: #03070C;
+  color: #03070c;
   cursor: pointer;
 }
 
@@ -80,5 +84,5 @@ input[type="checkbox"] {
 
 .checkbox-text {
   display: inline;
-  color: #61afef;
+  color: #abb2bf;
 }
