@@ -1,5 +1,52 @@
 package data
 
+import "fmt"
+
+var ActivePrs []PullRequest
+
+func SaveActivePrs(newPrs []PullRequest) {
+	ActivePrs = newPrs
+}
+
+func CompareOldAndNewActivePrs(newPrs []PullRequest) {
+	if len(ActivePrs) == 0 && len(newPrs) == 0 {
+		fmt.Println("No active PRs yet")
+	}
+
+	if len(newPrs) > len(ActivePrs) {
+		handleNewPrs(newPrs)
+	}
+
+	if len(newPrs) < len(ActivePrs) {
+		handleClosedPrs(newPrs)
+	}
+
+	compareComments(newPrs)
+}
+
+func handleNewPrs(newPrs []PullRequest) {
+	panic("unimplemented")
+}
+
+func handleClosedPrs(newPrs []PullRequest) {
+	panic("unimplemented")
+}
+
+func compareComments(newPrs []PullRequest) {
+	var newComments, oldComments int
+
+	for _, oldPr := range ActivePrs {
+		oldComments += oldPr.Properties.CommentCount
+		oldComments += oldPr.Properties.ResolvedTaskCount
+		oldComments += oldPr.Properties.OpenTaskCount
+	}
+	for _, newPr := range newPrs {
+		newComments += newPr.Properties.CommentCount
+		newComments += newPr.Properties.ResolvedTaskCount
+		newComments += newPr.Properties.OpenTaskCount
+	}
+}
+
 type ActivePullRequestsResponse struct {
 	Size       int           `json:"size"`
 	Limit      int           `json:"limit"`

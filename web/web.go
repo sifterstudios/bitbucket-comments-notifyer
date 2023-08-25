@@ -35,6 +35,7 @@ func getStatsHandler(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		log.Print(err)
 	}
+	data.SaveActivePrs(response.Values)
 	uiStats := data.ConvertActivePrResponseToUiStatistics(response)
 	fmt.Println(uiStats)
 	jsonUiStats, err := json.Marshal(uiStats)

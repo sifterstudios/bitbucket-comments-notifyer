@@ -18,3 +18,8 @@ type Config struct {
 		Password []byte `yaml:"password"`
 	} `yaml:"credentials"`
 }
+
+type Notification struct {
+	Title string
+	Body  string
+}
