@@ -8,9 +8,8 @@ type UIStatistics struct {
 	NumberOfActivePrTasks    int
 }
 
-func ConvertActivePrResponseToUiStatistics(response ActivePullRequestsResponse) UIStatistics {
+func ConvertActivePrResponseToUiStatistics(activePrs []PullRequest) UIStatistics {
 	stats := UIStatistics{}
-	activePrs := response.Values
 	for _, pr := range activePrs {
 		stats.NumberOfActivePrComments += pr.Properties.CommentCount
 		stats.NumberOfActivePrTasks += pr.Properties.OpenTaskCount

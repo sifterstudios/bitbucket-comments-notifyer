@@ -6,7 +6,7 @@ import (
 )
 
 func SendNotification(headline, message string) error {
-	cmd := exec.Command("notify-send", headline, message)
+	cmd := exec.Command("notify-send", headline, message, "-t", "0")
 
 	err := cmd.Run()
 	if err != nil {

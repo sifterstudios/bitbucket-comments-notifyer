@@ -79,11 +79,11 @@ func createAndSaveConfigFile() {
 }
 
 func getDefaultSettings(config *data.Config) {
-	config.Notification.PollingInterval = 5
-	config.Notification.Comments = true
-	config.Notification.Tasks = true
-	config.Notification.StatusChanges = true
-	config.Notification.CompletionTime = true
+	config.ConfigNotifications.PollingInterval = 5
+	config.ConfigNotifications.Comments = true
+	config.ConfigNotifications.Tasks = true
+	config.ConfigNotifications.StatusChanges = true
+	config.ConfigNotifications.CompletionTime = true
 }
 
 func createAndSaveSecurityFile() {

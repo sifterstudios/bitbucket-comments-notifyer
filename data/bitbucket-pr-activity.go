@@ -1,5 +1,97 @@
 package data
 
+import (
+	"fmt"
+	"github.com/sifterstudios/bitbucket-notifier/notification"
+	"strconv"
+)
+
+var (
+	CurrentPrActivity []Activity
+)
+
+func HandlePrActivity(activePrs []PullRequest, allSlicesOfActivities [][]Activity) {
+	for _, pr := range activePrs {
+		var sumOfNewActivities int
+		for _, sliceOfActivities := range allSlicesOfActivities {
+			sumOfNewActivities++
+			for _, a := range sliceOfActivities {
+				sumOfNewActivities += len(a.Comment.CommentThread)
+				a.CommentAction = strconv.Itoa(pr.ID)
+				handleDifference(pr.Title, a)
+			}
+		}
+		if len(CurrentPrActivity) == 0 && sumOfNewActivities == 0 {
+			fmt.Println("No activities found.")
+			return
+		}
+	}
+	if len(CurrentPrActivity) == 0 {
+		CurrentPrActivity = flatten(allSlicesOfActivities)
+	}
+}
+
+func flatten(activities [][]Activity) []Activity {
+	var flattened []Activity
+	for _, slice := range activities {
+		for _, activity := range slice {
+			flattened = append(flattened, activity)
+		}
+	}
+	return flattened
+}
+
+func handleDifference(prTitle string, activity Activity) {
+	if !contains(CurrentPrActivity, activity) { // TODO: I think now every comment will be notified when there's an answer to that comment.
+		handleNotifying(prTitle, activity, false)
+		CurrentPrActivity = append(CurrentPrActivity, activity)
+	} else if isUpdate(activity) {
+		handleNotifying(prTitle, activity, true)
+		CurrentPrActivity = update(CurrentPrActivity, activity)
+
+	}
+}
+
+func handleNotifying(prTitle string, activity Activity, isUpdate bool) {
+	if activity.Action == "COMMENTED" {
+		// NOTE: Different servers use email/username to authenticate
+		if activity.User.Name != string(UserConfig.Credentials.Username) &&
+			activity.User.EmailAddress != string(UserConfig.Credentials.Username) {
+			notifyAboutNewComment(activity.User.DisplayName, activity.Comment.Text, activity.CommentAnchor.Path, prTitle)
+		}
+	}
+}
+
+func notifyAboutNewComment(authoorName string, message string, filePath, prTitle string) {
+	fmt.Printf("New comment by %s on PR %s: %s\n", authoorName, filePath, message)
+	err := notification.SendNotification(fmt.Sprintf("New comment by %s on PR %s", authoorName, prTitle), fmt.Sprintf("%s/n %s", filePath, message))
+	if err != nil {
+		fmt.Println(err)
+	}
+
+}
+func update(currentPrs []Activity, newActivity Activity) []Activity {
+	for i, activity := range currentPrs {
+		if activity.ID == newActivity.ID {
+			currentPrs[i] = newActivity
+		}
+	}
+	return currentPrs
+}
+
+func isUpdate(activity Activity) bool {
+	return activity.Action == "UPDATED"
+}
+
+func contains(currentPrActivity []Activity, newActivity Activity) bool {
+	for _, activity := range currentPrActivity {
+		if activity.ID == newActivity.ID {
+			return true
+		}
+	}
+	return false
+}
+
 type PullRequestActivityResponse struct {
 	Size       int        `json:"size"`
 	Limit      int        `json:"limit"`
@@ -15,7 +107,7 @@ type Comment struct {
 	Author              User              `json:"author"`
 	CreatedDate         int64             `json:"createdDate"`
 	UpdatedDate         int64             `json:"updatedDate"`
-	Comments            []Comment         `json:"comments"`
+	CommentThread       []Comment         `json:"comments"`
 	Tasks               []Task            `json:"tasks"`
 	Severity            string            `json:"severity"`
 	State               string            `json:"state"`

@@ -2,22 +2,22 @@ package data
 
 import "fmt"
 
-var ActivePrs []PullRequest
+var CurrentPrs []PullRequest
 
-func SaveActivePrs(newPrs []PullRequest) {
-	ActivePrs = newPrs
+func HandleCurrentPrs(newPrs []PullRequest) {
+	CurrentPrs = newPrs
 }
 
 func CompareOldAndNewActivePrs(newPrs []PullRequest) {
-	if len(ActivePrs) == 0 && len(newPrs) == 0 {
+	if len(CurrentPrs) == 0 && len(newPrs) == 0 {
 		fmt.Println("No active PRs yet")
 	}
 
-	if len(newPrs) > len(ActivePrs) {
+	if len(newPrs) > len(CurrentPrs) {
 		handleNewPrs(newPrs)
 	}
 
-	if len(newPrs) < len(ActivePrs) {
+	if len(newPrs) < len(CurrentPrs) {
 		handleClosedPrs(newPrs)
 	}
 
@@ -35,7 +35,7 @@ func handleClosedPrs(newPrs []PullRequest) {
 func compareComments(newPrs []PullRequest) {
 	var newComments, oldComments int
 
-	for _, oldPr := range ActivePrs {
+	for _, oldPr := range CurrentPrs {
 		oldComments += oldPr.Properties.CommentCount
 		oldComments += oldPr.Properties.ResolvedTaskCount
 		oldComments += oldPr.Properties.OpenTaskCount

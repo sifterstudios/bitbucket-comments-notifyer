@@ -3,6 +3,7 @@ package bitbucket
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/go-resty/resty/v2"
@@ -10,8 +11,9 @@ import (
 	"github.com/sifterstudios/bitbucket-notifier/data"
 )
 
-func GetActivePullRequestsByUser(config data.Config) (data.ActivePullRequestsResponse, error) {
-	client := resty.New()
+var client = resty.New()
+
+func GetCurrentPullRequestsByUser(config data.Config) (data.ActivePullRequestsResponse, error) {
 
 	apiUrl := config.Bitbucket.ServerUrl + data.ActivePullRequestsApiPath
 	username := string(config.Credentials.Username)
@@ -38,28 +40,43 @@ func GetActivePullRequestsByUser(config data.Config) (data.ActivePullRequestsRes
 		return data.ActivePullRequestsResponse{}, jsonErr
 	}
 
-	// fmt.Println("Response Body: ", resp.String())
-	// fmt.Println("Response Body: ", jsonData)
 	return jsonData, nil
 }
 
-func GetPullRequestActivity() (response data.PullRequestActivityResponse) {
-	// Original string
-	url := "/rest/api/latest/projects/projectname/repos/reponame/pull-requests/PR-id/activities"
+func GetPullRequestsActivity(prs []data.PullRequest) (response [][]data.Activity, err error) {
+	username := string(data.UserConfig.Credentials.Username)
+	password := string(data.UserConfig.Credentials.Password)
+	client.SetBasicAuth(username, password)
 
-	// Define replacements
-	replacements := map[string]string{
-		"projectname": "newproject",
-		"reponame":    "newrepo",
-		"PR-id":       "newPRid",
+	for _, pr := range prs {
+		url := getActivityUrl(pr.FromRef.Repository.Project.Key,
+			pr.FromRef.Repository.Name,
+			pr.ID)
+		r, err := client.R().Get(url)
+		if err != nil {
+			panic(err)
+		}
+
+		jsonData := data.PullRequestActivityResponse{}
+		err = json.Unmarshal(r.Body(), &jsonData)
+
+		response = append(response, jsonData.Values)
 	}
 
-	// Replace each placeholder
+	return response, nil
+}
+
+func getActivityUrl(key string, name string, id int) (url string) {
+	url = data.UserConfig.Bitbucket.ServerUrl + data.PullRequestActivitiesApiPath
+
+	replacements := map[string]string{
+		"projectname": key,
+		"reponame":    name,
+		"PR-id":       strconv.Itoa(id),
+	}
+
 	for placeholder, replacement := range replacements {
 		url = strings.ReplaceAll(url, placeholder, replacement)
 	}
-
-	// Print the updated string
-	fmt.Println(url)
-	return data.PullRequestActivityResponse{}
+	return url
 }

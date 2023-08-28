@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"reflect"
+	"strconv"
 
 	"github.com/gorilla/mux"
 
@@ -22,9 +24,10 @@ func StartWebServer() {
 		http.ServeFile(w, r, "../web/templates/index.html")
 	})
 	r.HandleFunc("/send-notification", sendNotificationHandler).Methods("POST")
-	r.HandleFunc("/manual-update", manualUpdateHandler).Methods("GET")
+	r.HandleFunc("/update", updateHandler).Methods("GET")
 	r.HandleFunc("/stats", getStatsHandler).Methods("GET")
-	r.HandleFunc("/config", getConfig).Methods("GET")
+	r.HandleFunc("/config", getConfigHandler).Methods("GET")
+	r.HandleFunc("/config", setConfigHandler).Methods("POST")
 
 	fmt.Println("Listening on port 1337")
 	fmt.Println("Go to http://localhost:1337 to change settings and test the setup!")
@@ -35,22 +38,22 @@ func StartWebServer() {
 }
 
 func getStatsHandler(writer http.ResponseWriter, _ *http.Request) {
-	response, err := bitbucket.GetActivePullRequestsByUser(data.UserConfig)
-	if err != nil {
-		log.Print(err)
+	if len(data.CurrentPrs) == 0 {
+		updateHandler(writer, nil)
 	}
-	data.SaveActivePrs(response.Values)
-	uiStats := data.ConvertActivePrResponseToUiStatistics(response)
-	fmt.Println(uiStats)
-	jsonUiStats, err := json.Marshal(uiStats)
-	_, err = writer.Write(jsonUiStats)
+	stats := data.ConvertActivePrResponseToUiStatistics(data.CurrentPrs)
+
+	writer.Header().Set("Content-Type", "application/json")
+	_, err := writer.Write([]byte(fmt.Sprintf(
+		`{"lastUpdate": %d, "numberOfActivePrComments": %d, "numberOfActivePrTasks": %d}`,
+		stats.LastUpdate, stats.NumberOfActivePrComments, stats.NumberOfActivePrTasks)))
 	if err != nil {
 		return
 	}
 }
 
-func getConfig(writer http.ResponseWriter, _ *http.Request) {
-	config := data.UserConfig.Notification
+func getConfigHandler(writer http.ResponseWriter, _ *http.Request) {
+	config := data.UserConfig.ConfigNotifications
 	fmt.Println(config)
 	jsonUiStats, err := json.Marshal(config)
 	if err != nil {
@@ -61,14 +64,50 @@ func getConfig(writer http.ResponseWriter, _ *http.Request) {
 		return
 	}
 }
+func setConfigHandler(_ http.ResponseWriter, request *http.Request) {
+	err := request.ParseForm()
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(request.Form)
+	newConfig := data.ConfigNotifications{}
+	pollingInterval, err := strconv.Atoi(request.Form.Get("monitoringFrequencyInput"))
+	if err != nil {
+		fmt.Println(err)
+	}
+	newConfig.PollingInterval = pollingInterval
+	newConfig.Comments = request.Form.Get("notifyCommentsCheckbox") == "on"
+	newConfig.Tasks = request.Form.Get("notifyTasksCheckbox") == "on"
+	newConfig.StatusChanges = request.Form.Get("notifyStatusChangesCheckbox") == "on"
+	newConfig.CompletionTime = request.Form.Get("notifyCompletionTimeCheckbox") == "on"
 
-func manualUpdateHandler(writer http.ResponseWriter, _ *http.Request) {
-	response, err := bitbucket.GetActivePullRequestsByUser(data.UserConfig)
+	data.UserConfig.ConfigNotifications = newConfig
+}
+
+func updateHandler(writer http.ResponseWriter, _ *http.Request) {
+	prResponse, err := bitbucket.GetCurrentPullRequestsByUser(data.UserConfig)
 	if err != nil {
 		log.Print(err)
 	}
-	uiStats := data.ConvertActivePrResponseToUiStatistics(response)
+
+	if !reflect.DeepEqual(prResponse.Values, data.CurrentPrs) {
+		data.HandleCurrentPrs(prResponse.Values)
+	}
+
+	activityResponse, err := bitbucket.GetPullRequestsActivity(data.CurrentPrs)
+	data.HandlePrActivity(data.CurrentPrs, activityResponse)
+	for _, activities := range activityResponse {
+		for _, activity := range activities {
+			for _, comment := range activity.Comment.CommentThread {
+				fmt.Println(comment)
+			}
+		}
+	}
+
+	uiStats := data.ConvertActivePrResponseToUiStatistics(prResponse.Values)
+
 	fmt.Println(uiStats)
+
 	jsonUiStats, err := json.Marshal(uiStats)
 	_, err = writer.Write(jsonUiStats)
 	if err != nil {
