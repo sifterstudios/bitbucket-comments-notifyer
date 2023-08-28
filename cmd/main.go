@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/sifterstudios/bitbucket-comments-notifyer/web"
+	"github.com/sifterstudios/bitbucket-notifier/web"
 )
 
 var secretKey [32]byte

@@ -1,4 +1,4 @@
-module github.com/sifterstudios/bitbucket-comments-notifyer
+module github.com/sifterstudios/bitbucket-notifier
 
 require (
 	github.com/go-resty/resty/v2 v2.7.0
@@ -6,7 +6,7 @@ require (
 )
 
 require (
-	github.com/gorilla/mux v1.8.0 // indirect
+	github.com/gorilla/mux v1.8.0
 	golang.org/x/net v0.14.0 // indirect
 	golang.org/x/sys v0.11.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0

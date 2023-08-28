@@ -3,13 +3,13 @@ package main
 import (
 	"crypto/rand"
 	"fmt"
+	"github.com/sifterstudios/bitbucket-notifier/auth"
 	"log"
 	"os"
 
 	"gopkg.in/yaml.v2"
 
-	data "github.com/sifterstudios/bitbucket-comments-notifyer/data"
-	auth "github.com/sifterstudios/bitbucket-comments-notifyer/internal/auth"
+	"github.com/sifterstudios/bitbucket-notifier/data"
 )
 
 func initialize() {
@@ -30,14 +30,23 @@ func createAndSaveConfigFile() {
 	fmt.Println("Looks like you're new here! Let's get you set up.")
 	fmt.Println("Please enter your Bitbucket username:")
 	var username string
-	fmt.Scanln(&username)
+	_, err := fmt.Scanln(&username)
+	if err != nil {
+		return
+	}
 	fmt.Println("Please enter your Bitbucket password:")
 	var password string
-	fmt.Scanln(&password)
+	_, err = fmt.Scanln(&password)
+	if err != nil {
+		return
+	}
 
 	fmt.Println("Please enter the full address for the bitbucket server(e.g: https://bitbucket.example.com):")
 	var address string
-	fmt.Scanln(&address)
+	_, err = fmt.Scanln(&address)
+	if err != nil {
+		return
+	}
 
 	encryptedUsername, encryptedPassword, err := auth.EncryptCredentials(
 		[]byte(username),
@@ -87,12 +96,12 @@ func createAndSaveSecurityFile() {
 }
 
 func getSecretKey() {
-	data, err := os.ReadFile(data.SecurityFile)
+	secretData, err := os.ReadFile(data.SecurityFile)
 	if err != nil {
-		data = nil
+		secretData = nil
 	}
 
-	copy(secretKey[:], data)
+	copy(secretKey[:], secretData)
 }
 
 func fileExists(file string) bool {

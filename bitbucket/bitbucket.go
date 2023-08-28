@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 
-	"github.com/sifterstudios/bitbucket-comments-notifyer/data"
+	"github.com/sifterstudios/bitbucket-notifier/data"
 )
 
 func GetActivePullRequestsByUser(config data.Config) (data.ActivePullRequestsResponse, error) {

@@ -8,9 +8,9 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/sifterstudios/bitbucket-comments-notifyer/data"
-	"github.com/sifterstudios/bitbucket-comments-notifyer/internal/bitbucket"
-	"github.com/sifterstudios/bitbucket-comments-notifyer/internal/notification"
+	"github.com/sifterstudios/bitbucket-notifier/bitbucket"
+	"github.com/sifterstudios/bitbucket-notifier/data"
+	"github.com/sifterstudios/bitbucket-notifier/notification"
 )
 
 func StartWebServer() {
@@ -26,11 +26,15 @@ func StartWebServer() {
 	r.HandleFunc("/stats", getStatsHandler).Methods("GET")
 	r.HandleFunc("/config", getConfig).Methods("GET")
 
-	fmt.Println("Listening on port 8080")
-	http.ListenAndServe(":8080", r)
+	fmt.Println("Listening on port 1337")
+	fmt.Println("Go to http://localhost:1337 to change settings and test the setup!")
+	err := http.ListenAndServe(":1337", r)
+	if err != nil {
+		return
+	}
 }
 
-func getStatsHandler(writer http.ResponseWriter, request *http.Request) {
+func getStatsHandler(writer http.ResponseWriter, _ *http.Request) {
 	response, err := bitbucket.GetActivePullRequestsByUser(data.UserConfig)
 	if err != nil {
 		log.Print(err)
@@ -39,20 +43,26 @@ func getStatsHandler(writer http.ResponseWriter, request *http.Request) {
 	uiStats := data.ConvertActivePrResponseToUiStatistics(response)
 	fmt.Println(uiStats)
 	jsonUiStats, err := json.Marshal(uiStats)
-	writer.Write(jsonUiStats)
+	_, err = writer.Write(jsonUiStats)
+	if err != nil {
+		return
+	}
 }
 
-func getConfig(writer http.ResponseWriter, request *http.Request) {
+func getConfig(writer http.ResponseWriter, _ *http.Request) {
 	config := data.UserConfig.Notification
 	fmt.Println(config)
 	jsonUiStats, err := json.Marshal(config)
 	if err != nil {
 		fmt.Println(err)
 	}
-	writer.Write(jsonUiStats)
+	_, err = writer.Write(jsonUiStats)
+	if err != nil {
+		return
+	}
 }
 
-func manualUpdateHandler(writer http.ResponseWriter, request *http.Request) {
+func manualUpdateHandler(writer http.ResponseWriter, _ *http.Request) {
 	response, err := bitbucket.GetActivePullRequestsByUser(data.UserConfig)
 	if err != nil {
 		log.Print(err)
@@ -60,10 +70,13 @@ func manualUpdateHandler(writer http.ResponseWriter, request *http.Request) {
 	uiStats := data.ConvertActivePrResponseToUiStatistics(response)
 	fmt.Println(uiStats)
 	jsonUiStats, err := json.Marshal(uiStats)
-	writer.Write(jsonUiStats)
+	_, err = writer.Write(jsonUiStats)
+	if err != nil {
+		return
+	}
 }
 
-func sendNotificationHandler(writer http.ResponseWriter, request *http.Request) {
+func sendNotificationHandler(writer http.ResponseWriter, _ *http.Request) {
 	err := notification.SendNotification("Test notification", "It just works! :D")
 	if err != nil {
 		http.Error(writer, "Failed to send notification", http.StatusInternalServerError)
