@@ -10,21 +10,14 @@ var (
 )
 
 func HandlePrActivity(activePrs []PullRequest, allSlicesOfActivities [][]Activity) {
-	var sumOfActivities int
 	if len(activePrs) != len(allSlicesOfActivities) {
 		fmt.Println("Error: Mismatch of PRs and slices of activities returned")
 		return
 	}
 	for i, sliceOfActivities := range allSlicesOfActivities {
-		sumOfActivities++
 		for _, a := range sliceOfActivities {
-			sumOfActivities += len(a.Comment.CommentThread)
 			handleDifference(activePrs[i].Title, a)
 		}
-	}
-	if len(CurrentPrActivity) == 0 && sumOfActivities == 0 {
-		fmt.Println("No activities found.")
-		return
 	}
 	if len(CurrentPrActivity) == 0 {
 		CurrentPrActivity = flatten(allSlicesOfActivities)

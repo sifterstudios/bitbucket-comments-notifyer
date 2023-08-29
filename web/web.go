@@ -31,10 +31,12 @@ func StartWebServer() {
 
 	fmt.Println("Listening on port 1337")
 	fmt.Println("Go to http://localhost:1337 to change settings and test the setup!")
-	err := http.ListenAndServe(":1337", r)
-	if err != nil {
-		return
-	}
+	go func() {
+		err := http.ListenAndServe(":1337", r)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}()
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
@@ -46,9 +48,9 @@ func StartWebServer() {
 
 func startScheduledUpdate() {
 	for {
-		time.Sleep(time.Duration(data.UserConfig.ConfigNotifications.PollingInterval) * time.Second)
 		println("Updating..." + time.Now().String())
 		updateHandler(nil, nil)
+		time.Sleep(time.Duration(data.UserConfig.ConfigNotifications.PollingInterval) * time.Minute)
 	}
 }
 func getStatsHandler(writer http.ResponseWriter, _ *http.Request) {

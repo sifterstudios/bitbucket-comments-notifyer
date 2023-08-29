@@ -16,4 +16,5 @@ func main() {
 	fmt.Println("Starting Web Server...")
 
 	web.StartWebServer()
+	fmt.Println("Hello")
 }
