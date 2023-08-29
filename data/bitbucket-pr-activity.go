@@ -19,7 +19,7 @@ func HandlePrActivity(activePrs []PullRequest, allSlicesOfActivities [][]Activit
 			handleDifference(activePrs[i].Title, a)
 		}
 	}
-	if len(CurrentPrActivity) == 0 {
+	if len(CurrentPrActivity) == 0 { // TODO: Will this ever happen?
 		CurrentPrActivity = flatten(allSlicesOfActivities)
 	}
 }
@@ -36,39 +36,84 @@ func flatten(activities [][]Activity) []Activity {
 
 func handleDifference(prTitle string, activity Activity) {
 	if !containsActivity(CurrentPrActivity, activity) { // TODO: I think now every comment will be notified when there's an answer to that comment.
-		handleNotifying(prTitle, activity, false)
-		CurrentPrActivity = append(CurrentPrActivity, activity)
-	} else if isUpdate(activity) {
-		handleNotifying(prTitle, activity, true)
-		CurrentPrActivity = update(CurrentPrActivity, activity)
+		handleNotifying(prTitle, activity)
+		CurrentPrActivity = updateCurrentPrActivities(CurrentPrActivity, activity)
 	}
 }
 
-func handleNotifying(prTitle string, activity Activity, isUpdate bool) {
-	if activity.Action == "COMMENTED" {
-		configUsername := string(UserConfig.Credentials.Username)
-		// NOTE: Different servers use email/username to authenticate
-		if activity.User.Name != configUsername &&
-			activity.User.EmailAddress != configUsername {
-			notifyAboutNewComment(activity.User.DisplayName, activity.Comment.Text, activity.CommentAnchor.Path, prTitle)
+func handleNotifying(prTitle string, activity Activity) {
+	if authorIsYou(activity) {
+		return
+	}
+	switch activity.Action {
+	case "OPENED":
+		notification.NotifyAboutOpenedPr()
+		break
+	case "COMMENTED":
+		if len(activity.Comment.CommentThread) != 0 {
+			notification.NotifyAboutNewAnswer(activity.User.DisplayName, activity.Comment.Text, activity.CommentAnchor.Path, prTitle)
+		} else {
+			notification.NotifyAboutNewComment(activity.User.DisplayName, activity.Comment.Text, activity.CommentAnchor.Path, prTitle)
 		}
+		break
+	case "RESCOPED":
+		notification.NotifyAboutNewAmend()
+		break
+	case "UPDATED":
+		notification.NotifyAboutNewCommit()
+		break
+	case "APPROVED":
+		notification.NotifyAboutApprovedPr()
+		break
+	case "DECLINED":
+		notification.NotifyAboutDeclinedPr()
+		break
+	case "DELETED":
+		notification.NotifyAboutDeletedPr()
+		break
+	case "MERGED":
+		notification.NotifyAboutMergedPr()
+		break
+	case "REOPENED":
+		notification.NotifyAboutReopenedPr()
+		break
+	case "UNAPPROVED":
+		notification.NotifyAboutUnapprovedPr()
+		break
+	case "REVIEW_COMMENTED":
+		notification.NotifyAboutReviewCommented()
+		break
+	case "REVIEWED_DISCARDED":
+		notification.NotifyAboutReviewDiscarded()
+		break
+	case "REVIEW_FINISHED":
+		notification.NotifyAboutReviewFinished()
+		break
+	case "REVIEWED":
+		notification.NotifyAboutReviewed()
+		break
 	}
 }
 
-func notifyAboutNewComment(authorName string, message string, filePath, prTitle string) {
-	fmt.Printf("New comment by %s on PR %s: %s\n", authorName, filePath, message)
-	err := notification.SendNotification(fmt.Sprintf("New comment by %s on PR %s", authorName, prTitle), fmt.Sprintf("%s/n %s", filePath, message))
-	if err != nil {
-		fmt.Println(err)
-	}
-
+func authorIsYou(activity Activity) bool { // NOTE: Different servers use email/username to authenticate
+	configUsername := string(UserConfig.Credentials.Username)
+	return activity.User.Name == configUsername ||
+		activity.User.EmailAddress == configUsername
 }
-func update(currentPrs []Activity, newActivity Activity) []Activity {
+
+func updateCurrentPrActivities(currentPrs []Activity, newActivity Activity) []Activity {
+	var found bool
 	for i, activity := range currentPrs {
 		if activity.ID == newActivity.ID {
 			currentPrs[i] = newActivity
+			found = true
+			break
 		}
 	}
+	if !found {
+		CurrentPrActivity = append(CurrentPrActivity, newActivity)
+	}
+
 	return currentPrs
 }
 
