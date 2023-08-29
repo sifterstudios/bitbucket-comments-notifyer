@@ -15,7 +15,7 @@ var client = resty.New()
 
 func GetCurrentPullRequestsByUser(config data.Config) (data.ActivePullRequestsResponse, error) {
 
-	apiUrl := config.Bitbucket.ServerUrl + data.ActivePullRequestsApiPath
+	apiUrl := config.Bitbucket.ServerUrl + data.CurrentPullRequestsApiPath
 	username := string(config.Credentials.Username)
 	password := string(config.Credentials.Password)
 

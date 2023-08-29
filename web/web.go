@@ -3,12 +3,13 @@ package web
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"reflect"
 	"strconv"
-
-	"github.com/gorilla/mux"
+	"sync"
+	"time"
 
 	"github.com/sifterstudios/bitbucket-notifier/bitbucket"
 	"github.com/sifterstudios/bitbucket-notifier/data"
@@ -19,7 +20,6 @@ func StartWebServer() {
 	r := mux.NewRouter()
 
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("../web/static/"))))
-
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "../web/templates/index.html")
 	})
@@ -35,8 +35,22 @@ func StartWebServer() {
 	if err != nil {
 		return
 	}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		startScheduledUpdate()
+		wg.Done()
+	}()
+	wg.Wait()
 }
 
+func startScheduledUpdate() {
+	for {
+		time.Sleep(time.Duration(data.UserConfig.ConfigNotifications.PollingInterval) * time.Second)
+		println("Updating..." + time.Now().String())
+		updateHandler(nil, nil)
+	}
+}
 func getStatsHandler(writer http.ResponseWriter, _ *http.Request) {
 	if len(data.CurrentPrs) == 0 {
 		updateHandler(writer, nil)
@@ -96,22 +110,17 @@ func updateHandler(writer http.ResponseWriter, _ *http.Request) {
 
 	activityResponse, err := bitbucket.GetPullRequestsActivity(data.CurrentPrs)
 	data.HandlePrActivity(data.CurrentPrs, activityResponse)
-	for _, activities := range activityResponse {
-		for _, activity := range activities {
-			for _, comment := range activity.Comment.CommentThread {
-				fmt.Println(comment)
-			}
-		}
-	}
 
 	uiStats := data.ConvertActivePrResponseToUiStatistics(prResponse.Values)
 
 	fmt.Println(uiStats)
 
-	jsonUiStats, err := json.Marshal(uiStats)
-	_, err = writer.Write(jsonUiStats)
-	if err != nil {
-		return
+	if writer != nil {
+		jsonUiStats, err := json.Marshal(uiStats)
+		_, err = writer.Write(jsonUiStats)
+		if err != nil {
+			return
+		}
 	}
 }
 
