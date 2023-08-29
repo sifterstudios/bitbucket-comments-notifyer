@@ -42,7 +42,7 @@ func handleDifference(prTitle string, activity Activity) {
 }
 
 func handleNotifying(prTitle string, activity Activity) {
-	if authorIsYou(activity) {
+	if authorIsYou(activity) { // TODO: Add option to negate this if debugging
 		return
 	}
 	switch activity.Action {
@@ -51,7 +51,8 @@ func handleNotifying(prTitle string, activity Activity) {
 		break
 	case "COMMENTED":
 		if len(activity.Comment.CommentThread) != 0 {
-			notification.NotifyAboutNewAnswer(activity.User.DisplayName, activity.Comment.Text, activity.CommentAnchor.Path, prTitle)
+			lastComment := activity.Comment.CommentThread[len(activity.Comment.CommentThread)-1]
+			notification.NotifyAboutNewAnswer(lastComment.Author.DisplayName, lastComment.Text, activity.CommentAnchor.Path, prTitle)
 		} else {
 			notification.NotifyAboutNewComment(activity.User.DisplayName, activity.Comment.Text, activity.CommentAnchor.Path, prTitle)
 		}
@@ -97,8 +98,20 @@ func handleNotifying(prTitle string, activity Activity) {
 
 func authorIsYou(activity Activity) bool { // NOTE: Different servers use email/username to authenticate
 	configUsername := string(UserConfig.Credentials.Username)
-	return activity.User.Name == configUsername ||
-		activity.User.EmailAddress == configUsername
+	slug := activity.Comment.Author.Slug
+	email := activity.Comment.Author.EmailAddress
+
+	if activity.Comment.Text == "" {
+		return false
+	}
+
+	if len(activity.Comment.CommentThread) != 0 {
+		slug = activity.Comment.CommentThread[len(activity.Comment.CommentThread)-1].Author.Slug
+		email = activity.Comment.CommentThread[len(activity.Comment.CommentThread)-1].Author.EmailAddress
+	}
+
+	return slug == configUsername ||
+		email == configUsername
 }
 
 func updateCurrentPrActivities(currentPrs []Activity, newActivity Activity) []Activity {
@@ -115,10 +128,6 @@ func updateCurrentPrActivities(currentPrs []Activity, newActivity Activity) []Ac
 	}
 
 	return currentPrs
-}
-
-func isUpdate(activity Activity) bool {
-	return activity.Action == "UPDATED"
 }
 
 func containsActivity(currentPrActivity []Activity, newActivity Activity) bool {

@@ -54,8 +54,9 @@ func startScheduledUpdate() {
 	}
 }
 func getStatsHandler(writer http.ResponseWriter, _ *http.Request) {
-	if len(data.CurrentPrs) == 0 {
-		updateHandler(writer, nil)
+	if data.CurrentPrs == nil {
+		fmt.Println("Error: Could not find any Pull Requests")
+		return
 	}
 	stats := data.ConvertActivePrResponseToUiStatistics(data.CurrentPrs)
 

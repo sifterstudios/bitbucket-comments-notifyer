@@ -6,13 +6,13 @@ import (
 )
 
 func SendNotification(headline, message string) error {
-	cmd := exec.Command("notify-send", headline, message, "-t", "0") // TODO: Add this as an option in front-end
+	cmd := exec.Command("notify-send", headline, message, "-t", "0") // TODO: Add timing of notification as an option in front-end
 
 	err := cmd.Run()
 	if err != nil {
 		return err
 	}
-	fmt.Println("Notification sent: ", headline, message)
+	//fmt.Println("Notification sent: ", headline, message)
 
 	return nil
 }
@@ -22,7 +22,9 @@ func NotifyAboutOpenedPr() {
 func NotifyAboutNewAnswer(authorName string, message string, filePath, prTitle string) {
 	filePath = parseFilePath(filePath)
 	fmt.Println("New answer!")
-	err := SendNotification(fmt.Sprintf("New answer by %s on PR %s", authorName, prTitle), fmt.Sprintf("%s/n %s", filePath, message))
+	err := SendNotification(fmt.Sprintf(`New comment by %s on PR %s`, authorName, prTitle),
+		fmt.Sprintf(`%s: 
+%s`, filePath, message))
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -31,7 +33,9 @@ func NotifyAboutNewAnswer(authorName string, message string, filePath, prTitle s
 func NotifyAboutNewComment(authorName string, message string, filePath, prTitle string) {
 	filePath = parseFilePath(filePath)
 	fmt.Println("New comment!")
-	err := SendNotification(fmt.Sprintf("New comment by %s on PR %s", authorName, prTitle), fmt.Sprintf("%s/n %s", filePath, message))
+	err := SendNotification(fmt.Sprintf(`New comment by %s on PR %s`, authorName, prTitle),
+		fmt.Sprintf(`%s: 
+%s`, filePath, message))
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -84,14 +88,20 @@ func NotifyAboutReviewed() {
 	fmt.Println("Reviewed!")
 }
 
-func NotifyAboutNewTask() {
-	fmt.Println("New task!")
-}
+//func NotifyAboutNewTask() {
+//	fmt.Println("New task!")
+//}
 
 func parseFilePath(path string) string {
+	if path == "" {
+		return ""
+	}
 	lastSlashIndex := 0
 	for i, c := range path {
-		if string(c) == "/" {
+		if i == len(path)-1 {
+			break
+		}
+		if c == '/' {
 			lastSlashIndex = i
 		}
 	}

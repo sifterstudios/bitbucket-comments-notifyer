@@ -6,7 +6,7 @@ type Config struct {
 	Bitbucket struct {
 		ServerUrl string `yaml:"server_url"`
 	} `yaml:"bitbucket"`
-	ConfigNotifications `yaml:"notifications"`
+	ConfigNotifications `yaml:"notification"`
 	Credentials         struct {
 		Username []byte `yaml:"username"`
 		Password []byte `yaml:"password"`
