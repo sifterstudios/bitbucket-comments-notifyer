@@ -88,13 +88,16 @@ func NotifyAboutReviewed() {
 	fmt.Println("Reviewed!")
 }
 
-//func NotifyAboutNewTask() {
-//	fmt.Println("New task!")
-//}
+func NotifyAboutNewTask() {
+	fmt.Println("New task!")
+}
 
+func NotifyAboutClosedTask() {
+	fmt.Println("Task was closed!")
+}
 func parseFilePath(path string) string {
 	if path == "" {
-		return ""
+		return "In general"
 	}
 	lastSlashIndex := 0
 	for i, c := range path {

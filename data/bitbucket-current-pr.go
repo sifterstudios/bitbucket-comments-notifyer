@@ -1,50 +1,9 @@
 package data
 
-import "fmt"
-
 var CurrentPrs []PullRequest
 
 func HandleCurrentPrs(newPrs []PullRequest) {
 	CurrentPrs = newPrs
-}
-
-func CompareOldAndNewActivePrs(newPrs []PullRequest) {
-	if len(CurrentPrs) == 0 && len(newPrs) == 0 {
-		fmt.Println("No active PRs yet")
-	}
-
-	if len(newPrs) > len(CurrentPrs) {
-		handleNewPrs(newPrs)
-	}
-
-	if len(newPrs) < len(CurrentPrs) {
-		handleClosedPrs(newPrs)
-	}
-
-	compareComments(newPrs)
-}
-
-func handleNewPrs(newPrs []PullRequest) {
-	panic("unimplemented")
-}
-
-func handleClosedPrs(newPrs []PullRequest) {
-	panic("unimplemented")
-}
-
-func compareComments(newPrs []PullRequest) {
-	var newComments, oldComments int
-
-	for _, oldPr := range CurrentPrs {
-		oldComments += oldPr.Properties.CommentCount
-		oldComments += oldPr.Properties.ResolvedTaskCount
-		oldComments += oldPr.Properties.OpenTaskCount
-	}
-	for _, newPr := range newPrs {
-		newComments += newPr.Properties.CommentCount
-		newComments += newPr.Properties.ResolvedTaskCount
-		newComments += newPr.Properties.OpenTaskCount
-	}
 }
 
 type ActivePullRequestsResponse struct {

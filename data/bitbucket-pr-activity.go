@@ -5,9 +5,7 @@ import (
 	"github.com/sifterstudios/bitbucket-notifier/notification"
 )
 
-var (
-	CurrentPrActivity []Activity
-)
+var Logbook []PersistentPullRequest
 
 func HandlePrActivity(activePrs []PullRequest, allSlicesOfActivities [][]Activity) {
 	if len(activePrs) != len(allSlicesOfActivities) {
@@ -16,84 +14,87 @@ func HandlePrActivity(activePrs []PullRequest, allSlicesOfActivities [][]Activit
 	}
 	for i, sliceOfActivities := range allSlicesOfActivities {
 		for _, a := range sliceOfActivities {
-			handleDifference(activePrs[i].Title, a)
+			handleDifference(activePrs[i], a)
 		}
 	}
-	if len(CurrentPrActivity) == 0 { // TODO: Will this ever happen?
-		CurrentPrActivity = flatten(allSlicesOfActivities)
+}
+
+func handleDifference(pr PullRequest, activity Activity) {
+	if !containsActivity(activity) {
+		handleNotifying(pr, activity)
+		updateCurrentPrActivities(pr, activity, 0, 0) // will reset if handled in HandleNotifying
 	}
 }
 
-func flatten(activities [][]Activity) []Activity {
-	var flattened []Activity
-	for _, slice := range activities {
-		for _, activity := range slice {
-			flattened = append(flattened, activity)
-		}
-	}
-	return flattened
-}
-
-func handleDifference(prTitle string, activity Activity) {
-	if !containsActivity(CurrentPrActivity, activity) { // TODO: I think now every comment will be notified when there's an answer to that comment.
-		handleNotifying(prTitle, activity)
-		CurrentPrActivity = updateCurrentPrActivities(CurrentPrActivity, activity)
-	}
-}
-
-func handleNotifying(prTitle string, activity Activity) {
+func handleNotifying(pr PullRequest, activity Activity) {
 	if authorIsYou(activity) { // TODO: Add option to negate this if debugging
 		return
 	}
 	switch activity.Action {
 	case "OPENED":
-		notification.NotifyAboutOpenedPr()
+		notification.NotifyAboutOpenedPr() // TODO: To be implemented User, Title, REPO
 		break
 	case "COMMENTED":
+		if prIsClosed(pr) {
+			break
+		}
 		if len(activity.Comment.CommentThread) != 0 {
 			lastComment := activity.Comment.CommentThread[len(activity.Comment.CommentThread)-1]
-			notification.NotifyAboutNewAnswer(lastComment.Author.DisplayName, lastComment.Text, activity.CommentAnchor.Path, prTitle)
+			notification.NotifyAboutNewAnswer(lastComment.Author.DisplayName, lastComment.Text, activity.CommentAnchor.Path, pr.Title)
 		} else {
-			notification.NotifyAboutNewComment(activity.User.DisplayName, activity.Comment.Text, activity.CommentAnchor.Path, prTitle)
+			if activity.Comment.Severity == "BLOCKER" {
+				if activity.Comment.State == "RESOLVED" {
+					notification.NotifyAboutClosedTask() // TODO: To be implemented
+					break
+				}
+				notification.NotifyAboutNewTask() // TODO: To be implemented
+				break
+			}
+
 		}
+		notification.NotifyAboutNewComment(activity.User.DisplayName, activity.Comment.Text, activity.CommentAnchor.Path, pr.Title)
 		break
 	case "RESCOPED":
-		notification.NotifyAboutNewAmend()
+		notification.NotifyAboutNewAmend() // User, Title, REPO. To be implemented
 		break
 	case "UPDATED":
-		notification.NotifyAboutNewCommit()
+		notification.NotifyAboutNewCommit() // User, Title, REPO. To be implemented
 		break
 	case "APPROVED":
-		notification.NotifyAboutApprovedPr()
+		notification.NotifyAboutApprovedPr() // User, Title, REPO. To be implemented
 		break
 	case "DECLINED":
-		notification.NotifyAboutDeclinedPr()
+		notification.NotifyAboutDeclinedPr() // User, Title, REPO. To be implemented
 		break
 	case "DELETED":
-		notification.NotifyAboutDeletedPr()
+		notification.NotifyAboutDeletedPr() // User, Title, REPO. To be implemented
 		break
 	case "MERGED":
-		notification.NotifyAboutMergedPr()
+		notification.NotifyAboutMergedPr() // User, Title, REPO. To be implemented
 		break
 	case "REOPENED":
-		notification.NotifyAboutReopenedPr()
+		notification.NotifyAboutReopenedPr() // User, Title, REPO. To be implemented
 		break
 	case "UNAPPROVED":
-		notification.NotifyAboutUnapprovedPr()
+		notification.NotifyAboutUnapprovedPr() // User, Title, REPO. To be implemented
 		break
-	case "REVIEW_COMMENTED":
-		notification.NotifyAboutReviewCommented()
-		break
-	case "REVIEWED_DISCARDED":
-		notification.NotifyAboutReviewDiscarded()
-		break
-	case "REVIEW_FINISHED":
-		notification.NotifyAboutReviewFinished()
-		break
+	//case "REVIEW_COMMENTED":
+	//	notification.NotifyAboutReviewCommented() // TODO: To be implemented
+	//	break
+	//case "REVIEWED_DISCARDED":
+	//	notification.NotifyAboutReviewDiscarded() // TODO: To be implemented
+	//	break
+	//case "REVIEW_FINISHED":
+	//	notification.NotifyAboutReviewFinished() // TODO: To be implemented
+	//	break
 	case "REVIEWED":
-		notification.NotifyAboutReviewed()
+		notification.NotifyAboutReviewed() // TODO: To be implemented
 		break
 	}
+}
+
+func prIsClosed(pr PullRequest) bool {
+	return pr.State == "DECLINED" || pr.State == "MERGED" || pr.State == "UNAPPROVED" || pr.State == "DELETED"
 }
 
 func authorIsYou(activity Activity) bool { // NOTE: Different servers use email/username to authenticate
@@ -114,31 +115,54 @@ func authorIsYou(activity Activity) bool { // NOTE: Different servers use email/
 		email == configUsername
 }
 
-func updateCurrentPrActivities(currentPrs []Activity, newActivity Activity) []Activity {
-	var found bool
-	for i, activity := range currentPrs {
-		if activity.ID == newActivity.ID {
-			currentPrs[i] = newActivity
-			found = true
-			break
-		}
-	}
-	if !found {
-		CurrentPrActivity = append(CurrentPrActivity, newActivity)
+func updateCurrentPrActivities(pr PullRequest, newActivity Activity, timeOpened int64, timeClosed int64) {
+	idxOfLogbook := getIdxOfLogbook(pr.ID)
+
+	if idxOfLogbook == -1 { // NOTE: PR not found in logbook
+		fmt.Println("Info: PR not found in logbook")
+		Logbook = append(Logbook, PersistentPullRequest{
+			Id:                   pr.ID,
+			NotifiedActivityIds:  []int{newActivity.ID},
+			TimeOpened:           timeOpened,
+			TimeFinished:         timeClosed,
+			DurationOpenToFinish: timeClosed - timeOpened,
+		})
+		return
 	}
 
-	return currentPrs
+	Logbook[idxOfLogbook].NotifiedActivityIds = append(Logbook[idxOfLogbook].NotifiedActivityIds, newActivity.ID)
+	if timeOpened != 0 {
+		Logbook[idxOfLogbook].TimeOpened = timeOpened
+	}
+	if timeClosed != 0 {
+		Logbook[idxOfLogbook].TimeFinished = timeClosed
+	}
+	if timeOpened != 0 && timeClosed != 0 {
+		Logbook[idxOfLogbook].DurationOpenToFinish = timeClosed - timeOpened
+	}
 }
 
-func containsActivity(currentPrActivity []Activity, newActivity Activity) bool {
+func getIdxOfLogbook(prId int) int {
+	for i, prStruct := range Logbook {
+		if prStruct.Id == prId {
+			return i
+		}
+	}
+	return -1
+}
+
+func containsActivity(newActivity Activity) bool {
 	var foundComment bool
 	var foundCommentThread bool
-	for _, activity := range currentPrActivity {
-		if activity.ID == newActivity.ID {
-			foundComment = true
-		}
-		if len(newActivity.Comment.CommentThread) > len(activity.Comment.CommentThread) {
-			foundCommentThread = true
+
+	for _, persistencePrStruct := range Logbook {
+		for _, activityId := range persistencePrStruct.NotifiedActivityIds {
+			if activityId == newActivity.ID {
+				foundComment = true
+			}
+			if len(newActivity.Comment.CommentThread) != 0 && activityId == newActivity.Comment.CommentThread[0].ID {
+				foundCommentThread = true
+			}
 		}
 	}
 	return foundComment && foundCommentThread

@@ -1,6 +1,8 @@
 package data
 
-var UserConfig Config
+var (
+	UserConfig Config
+)
 
 type Config struct {
 	Bitbucket struct {
@@ -24,4 +26,16 @@ type ConfigNotifications struct {
 	Tasks           bool `yaml:"tasks"`
 	StatusChanges   bool `yaml:"status_changes"`
 	CompletionTime  bool `yaml:"completion_time"`
+}
+
+type PersistentData struct {
+	PersistentPullRequests []PersistentPullRequest `yaml:"persistent_pull_requests"`
+}
+
+type PersistentPullRequest struct {
+	Id                   int   `yaml:"id"`
+	NotifiedActivityIds  []int `yaml:"notified_activities"`
+	TimeOpened           int64 `yaml:"time_opened"`
+	TimeFinished         int64 `yaml:"time_finished"`
+	DurationOpenToFinish int64 `yaml:"duration_open_to_finish"`
 }

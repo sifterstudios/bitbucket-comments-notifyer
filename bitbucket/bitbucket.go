@@ -14,7 +14,6 @@ import (
 var client = resty.New()
 
 func GetCurrentPullRequestsByUser(config data.Config) (data.ActivePullRequestsResponse, error) {
-
 	apiUrl := config.Bitbucket.ServerUrl + data.CurrentPullRequestsApiPath
 	username := string(config.Credentials.Username)
 	password := string(config.Credentials.Password)
@@ -23,7 +22,7 @@ func GetCurrentPullRequestsByUser(config data.Config) (data.ActivePullRequestsRe
 
 	resp, err := client.R().Get(apiUrl)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
 	}
 
 	if resp.StatusCode() == 200 {
@@ -35,9 +34,9 @@ func GetCurrentPullRequestsByUser(config data.Config) (data.ActivePullRequestsRe
 
 	var jsonData data.ActivePullRequestsResponse
 
-	jsonErr := json.Unmarshal(r, &jsonData)
-	if jsonErr != nil {
-		return data.ActivePullRequestsResponse{}, jsonErr
+	err = json.Unmarshal(r, &jsonData)
+	if err != nil {
+		return data.ActivePullRequestsResponse{}, err
 	}
 
 	return jsonData, nil

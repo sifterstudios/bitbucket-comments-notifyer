@@ -13,17 +13,18 @@ import (
 )
 
 func initialize() {
-	if fileExists(data.SecurityFile) {
+	if fileOrFolderExists(data.SecurityFile) {
 		getSecretKey()
 	} else {
 		getRandomKey()
 		createAndSaveSecurityFile()
 	}
-	if fileExists(data.ConfigFile) {
+	if fileOrFolderExists(data.ConfigFile) {
 		data.UserConfig = getConfig()
 	} else {
 		createAndSaveConfigFile()
 	}
+	data.Logbook = getPersistentData()
 }
 
 func createAndSaveConfigFile() {
@@ -104,7 +105,7 @@ func getSecretKey() {
 	copy(secretKey[:], secretData)
 }
 
-func fileExists(file string) bool {
+func fileOrFolderExists(file string) bool {
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		return false
 	}
@@ -134,4 +135,23 @@ func getConfig() data.Config {
 	config.Credentials.Password = decryptedPassword
 
 	return config
+}
+func getPersistentData() []data.PersistentPullRequest {
+	if !fileOrFolderExists(data.LogbookFile) {
+		err := os.WriteFile(data.LogbookFile, []byte{}, 0600)
+		if err != nil {
+			fmt.Println("Error creating logbook file")
+		}
+	}
+
+	fileData, err := os.ReadFile(data.LogbookFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var persistentPrs []data.PersistentPullRequest
+	if err := yaml.Unmarshal(fileData, &persistentPrs); err != nil {
+		log.Fatal(err)
+	}
+	return persistentPrs
 }
