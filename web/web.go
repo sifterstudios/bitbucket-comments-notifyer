@@ -128,17 +128,13 @@ func updateHandler(writer http.ResponseWriter, _ *http.Request) {
 }
 
 func sendNotificationHandler(writer http.ResponseWriter, _ *http.Request) {
-	err := notification.SendNotification("Test notification", "It just works! :D")
-	if err != nil {
-		http.Error(writer, "Failed to send notification", http.StatusInternalServerError)
-		return
-	}
+	notification.SendNotification("Test notification", "It just works! :D")
 
 	response := map[string]string{
 		"message": "Notification sent successfully, look top right!",
 	}
 	writer.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(writer).Encode(response)
+	err := json.NewEncoder(writer).Encode(response)
 	if err != nil {
 		return
 	}

@@ -24,7 +24,7 @@ func HandlePrActivity(activePrs []PullRequest, allSlicesOfActivities [][]Activit
 func handleDifference(pr PullRequest, activity Activity) {
 	if !containsActivity(activity.ID) {
 		handleNotifying(pr, activity)
-		updateCurrentPrActivities(pr, activity, 0, 0) // will reset if handled in HandleNotifying
+		updateCurrentPrActivities(pr, activity, 0, 0)
 	}
 }
 
@@ -34,7 +34,8 @@ func handleNotifying(pr PullRequest, activity Activity) {
 	}
 	switch activity.Action {
 	case "OPENED":
-		notification.NotifyAboutOpenedPr() // TODO: To be implemented User, Title, REPO
+		notification.NotifyAboutOpenedPr(pr.FromRef.Repository.Name, activity.User.DisplayName, pr.Title, pr.Description)
+		updateCurrentPrActivities(pr, activity, activity.CreatedDate, 0)
 		break
 	case "COMMENTED":
 		if prIsClosed(pr) {
@@ -43,40 +44,24 @@ func handleNotifying(pr PullRequest, activity Activity) {
 		handleCommentLogic(pr, activity)
 		break
 	case "RESCOPED":
-		notification.NotifyAboutNewAmend() // User, Title, REPO. To be implemented
+		notification.NotifyAboutNewAmend(pr.FromRef.Repository.Name, activity.User.DisplayName, pr.Title, activity.Diff.Destination.Name)
 		break
 	case "UPDATED":
-		notification.NotifyAboutNewCommit() // User, Title, REPO. To be implemented
+		notification.NotifyAboutNewCommit(pr.FromRef.Repository.Name, activity.User.DisplayName, pr.Title, activity.Diff.Destination.Name)
 		break
 	case "APPROVED":
-		notification.NotifyAboutApprovedPr() // User, Title, REPO. To be implemented
+		notification.NotifyAboutApprovedPr(pr.FromRef.Repository.Name, activity.User.DisplayName, pr.Title)
 		break
 	case "DECLINED":
-		notification.NotifyAboutDeclinedPr() // User, Title, REPO. To be implemented
-		break
-	case "DELETED":
-		notification.NotifyAboutDeletedPr() // User, Title, REPO. To be implemented
+		notification.NotifyAboutDeclinedPr(pr.FromRef.Repository.Name, activity.User.DisplayName, pr.Title)
+		updateCurrentPrActivities(pr, activity, 0, activity.CreatedDate)
 		break
 	case "MERGED":
-		notification.NotifyAboutMergedPr() // User, Title, REPO. To be implemented
+		notification.NotifyAboutMergedPr(pr.FromRef.Repository.Name, activity.User.DisplayName, pr.Title)
+		updateCurrentPrActivities(pr, activity, 0, activity.CreatedDate)
 		break
-	case "REOPENED":
-		notification.NotifyAboutReopenedPr() // User, Title, REPO. To be implemented
-		break
-	case "UNAPPROVED":
-		notification.NotifyAboutUnapprovedPr() // User, Title, REPO. To be implemented
-		break
-	//case "REVIEW_COMMENTED":
-	//	notification.NotifyAboutReviewCommented() // TODO: To be implemented
-	//	break
-	//case "REVIEWED_DISCARDED":
-	//	notification.NotifyAboutReviewDiscarded() // TODO: To be implemented
-	//	break
-	//case "REVIEW_FINISHED":
-	//	notification.NotifyAboutReviewFinished() // TODO: To be implemented
-	//	break
 	case "REVIEWED":
-		notification.NotifyAboutReviewed() // TODO: To be implemented
+		notification.NotifyAboutReviewed(pr.FromRef.Repository.Name, activity.User.DisplayName, pr.Title)
 		break
 	}
 }
@@ -88,16 +73,16 @@ func handleCommentLogic(pr PullRequest, activity Activity) {
 			if containsActivity(answer.ID) || authorIsYou(activity) {
 				return
 			}
-			notification.NotifyAboutNewAnswer(answer.Author.DisplayName, answer.Text, activity.CommentAnchor.Path, pr.Title)
+			notification.NotifyAboutComment(answer.Author.DisplayName, answer.Text, activity.CommentAnchor.Path, pr.Title)
 		}
 	}
 	if isTask(activity) {
 		if isTaskClosed(activity) {
-			notification.NotifyAboutClosedTask() // TODO: To be implemented
+			notification.NotifyAboutClosedTask(activity.User.DisplayName, activity.Comment.Text, activity.CommentAnchor.Path, pr.Title)
 		}
-		notification.NotifyAboutNewTask() // TODO: To be implemented
+		notification.NotifyAboutNewTask(activity.User.DisplayName, activity.Comment.Text, activity.CommentAnchor.Path, pr.Title)
 	}
-	notification.NotifyAboutNewComment(activity.User.DisplayName, activity.Comment.Text, activity.CommentAnchor.Path, pr.Title)
+	notification.NotifyAboutComment(activity.User.DisplayName, activity.Comment.Text, activity.CommentAnchor.Path, pr.Title)
 }
 
 func isTaskClosed(activity Activity) bool {
@@ -145,7 +130,12 @@ func updateCurrentPrActivities(pr PullRequest, newActivity Activity, timeOpened 
 		return
 	}
 
-	Logbook[idxOfLogbook].NotifiedActivityIds = append(Logbook[idxOfLogbook].NotifiedActivityIds, newActivity.ID)
+	ids := Logbook[idxOfLogbook].NotifiedActivityIds
+	if isActivityNew(ids, newActivity.ID) {
+		ids = append(ids, newActivity.ID)
+	} else {
+		appendAnswers(&ids, newActivity.Comment.CommentThread)
+	}
 	if timeOpened != 0 {
 		Logbook[idxOfLogbook].TimeOpened = timeOpened
 	}
@@ -155,6 +145,27 @@ func updateCurrentPrActivities(pr PullRequest, newActivity Activity, timeOpened 
 	if timeOpened != 0 && timeClosed != 0 {
 		Logbook[idxOfLogbook].DurationOpenToFinish = timeClosed - timeOpened
 	}
+}
+
+func appendAnswers(ids *[]int, answers []Comment) {
+	if len(answers) == 0 {
+		return
+	}
+	for _, answer := range answers {
+		if isActivityNew(*ids, answer.ID) {
+			*ids = append(*ids, answer.ID)
+		}
+	}
+
+}
+
+func isActivityNew(ids []int, newId int) bool {
+	for _, id := range ids {
+		if id == newId {
+			return false
+		}
+	}
+	return true
 }
 
 func getIdxOfLogbook(prId int) int {

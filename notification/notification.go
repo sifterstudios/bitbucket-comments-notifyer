@@ -5,96 +5,74 @@ import (
 	"os/exec"
 )
 
-func SendNotification(headline, message string) error {
+func SendNotification(headline, message string) {
 	cmd := exec.Command("notify-send", headline, message, "-t", "0") // TODO: Add timing of notification as an option in front-end
 
 	err := cmd.Run()
 	if err != nil {
-		return err
+		print(err)
 	}
 	//fmt.Println("Notification sent: ", headline, message)
 
-	return nil
 }
-func NotifyAboutOpenedPr() {
-	fmt.Println("New PR opened!")
+func NotifyAboutOpenedPr(repo string, user string, prTitle string, prDesc string) {
+	SendNotification(fmt.Sprintf(`New PR by %s on %s`, user, repo),
+		fmt.Sprintf(`%s:
+%s`, prTitle, prDesc))
 }
-func NotifyAboutNewAnswer(authorName string, message string, filePath, prTitle string) {
+
+func NotifyAboutComment(authorName string, message string, filePath, prTitle string) {
 	filePath = parseFilePath(filePath)
-	fmt.Println("New answer!")
-	err := SendNotification(fmt.Sprintf(`New comment by %s on PR %s`, authorName, prTitle),
+	SendNotification(fmt.Sprintf(`New comment by %s on PR %s`, authorName, prTitle),
 		fmt.Sprintf(`%s: 
 %s`, filePath, message))
-	if err != nil {
-		fmt.Println(err)
-	}
 }
 
-func NotifyAboutNewComment(authorName string, message string, filePath, prTitle string) {
+func NotifyAboutNewTask(authorName string, message string, filePath, prTitle string) {
 	filePath = parseFilePath(filePath)
-	fmt.Println("New comment!")
-	err := SendNotification(fmt.Sprintf(`New comment by %s on PR %s`, authorName, prTitle),
+	SendNotification(fmt.Sprintf(`New TASK by %s on PR %s`, authorName, prTitle),
 		fmt.Sprintf(`%s: 
 %s`, filePath, message))
-	if err != nil {
-		fmt.Println(err)
-	}
-}
-func NotifyAboutNewAmend() {
-	fmt.Println("New amend!")
 }
 
-func NotifyAboutNewCommit() {
-	fmt.Println("New commit!")
+func NotifyAboutClosedTask(authorName string, message string, filePath, prTitle string) {
+	filePath = parseFilePath(filePath)
+	SendNotification(fmt.Sprintf(`Task CLOSED by %s on PR %s`, authorName, prTitle),
+		fmt.Sprintf(`%s: 
+%s`, filePath, message))
+}
+func NotifyAboutNewAmend(repo string, user string, prTitle string, commit string) {
+	SendNotification(fmt.Sprintf(`New amend by %s in %s`, user, repo),
+		fmt.Sprintf(`PR: %s:
+Amend: %s`, prTitle, commit))
 }
 
-func NotifyAboutApprovedPr() {
-	fmt.Println("PR approved!")
+func NotifyAboutNewCommit(repo string, user string, prTitle string, commit string) {
+	SendNotification(fmt.Sprintf(`New commit by %s in %s`, user, repo),
+		fmt.Sprintf(`PR: %s:
+Commit: %s`, prTitle, commit))
 }
 
-func NotifyAboutDeclinedPr() {
-	fmt.Println("PR declined!")
+func NotifyAboutApprovedPr(repo string, user string, prTitle string) {
+	SendNotification(fmt.Sprintf(`PR APPROVED by %s in %s`, user, repo),
+		fmt.Sprintf(`PR: %s`, prTitle))
 }
 
-func NotifyAboutDeletedPr() {
-	fmt.Println("PR deleted!")
+func NotifyAboutDeclinedPr(repo string, user string, prTitle string) {
+	SendNotification(fmt.Sprintf(`PR declined by %s in %s`, user, repo),
+		fmt.Sprintf(`PR: %s`, prTitle))
 }
 
-func NotifyAboutMergedPr() {
-	fmt.Println("PR merged!")
+func NotifyAboutMergedPr(repo string, user string, prTitle string) {
+	SendNotification(fmt.Sprintf(`PR merged by %s in %s`, user, repo),
+		fmt.Sprintf(`PR: %s`, prTitle))
 }
 
-func NotifyAboutReopenedPr() {
-	fmt.Println("PR reopened!")
+func NotifyAboutReviewed(repo string, user string, prTitle string) {
+	SendNotification(fmt.Sprintf(`PR set to NEEDS WORK by %s in %s`, user, repo),
+		fmt.Sprintf(`PR: %s`, prTitle))
 }
 
-func NotifyAboutUnapprovedPr() {
-	fmt.Println("PR unapproved!")
-}
-
-func NotifyAboutReviewCommented() {
-	fmt.Println("Review commented!")
-}
-
-func NotifyAboutReviewDiscarded() {
-	fmt.Println("Review discarded!")
-}
-
-func NotifyAboutReviewFinished() {
-	fmt.Println("Review finished!")
-}
-
-func NotifyAboutReviewed() {
-	fmt.Println("Reviewed!")
-}
-
-func NotifyAboutNewTask() {
-	fmt.Println("New task!")
-}
-
-func NotifyAboutClosedTask() {
-	fmt.Println("Task was closed!")
-}
 func parseFilePath(path string) string {
 	if path == "" {
 		return "In general"
