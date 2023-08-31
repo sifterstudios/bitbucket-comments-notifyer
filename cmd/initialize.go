@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/rand"
 	"fmt"
 	"github.com/sifterstudios/bitbucket-notifier/auth"
 	"log"
@@ -13,18 +12,18 @@ import (
 )
 
 func initialize() {
-	if fileOrFolderExists(data.SecurityFile) {
-		getSecretKey()
+	if data.FileOrFolderExists(data.SecurityFile) { // TODO: This should be data's responsibility
+		data.GetSecretKey()
 	} else {
-		getRandomKey()
-		createAndSaveSecurityFile()
+		data.GetRandomKey()
+		data.CreateAndSaveSecurityFile()
 	}
-	if fileOrFolderExists(data.ConfigFile) {
-		data.UserConfig = getConfig()
+	if data.FileOrFolderExists(data.ConfigFile) {
+		data.UserConfig = data.GetConfig()
 	} else {
 		createAndSaveConfigFile()
 	}
-	data.Logbook = getPersistentData()
+	data.Logbook = data.GetPersistentData()
 }
 
 func createAndSaveConfigFile() {
@@ -52,7 +51,7 @@ func createAndSaveConfigFile() {
 	encryptedUsername, encryptedPassword, err := auth.EncryptCredentials(
 		[]byte(username),
 		[]byte(password),
-		&secretKey)
+		&data.SecretKey)
 	if err != nil {
 		panic(err)
 	}
@@ -85,73 +84,4 @@ func getDefaultSettings(config *data.Config) {
 	config.ConfigNotifications.Tasks = true
 	config.ConfigNotifications.StatusChanges = true
 	config.ConfigNotifications.CompletionTime = true
-}
-
-func createAndSaveSecurityFile() {
-	err := os.WriteFile(data.SecurityFile, secretKey[:], 0600)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println("Security file created.")
-}
-
-func getSecretKey() {
-	secretData, err := os.ReadFile(data.SecurityFile)
-	if err != nil {
-		secretData = nil
-	}
-
-	copy(secretKey[:], secretData)
-}
-
-func fileOrFolderExists(file string) bool {
-	if _, err := os.Stat(file); os.IsNotExist(err) {
-		return false
-	}
-	return true
-}
-
-func getRandomKey() {
-	if _, err := rand.Read(secretKey[:]); err != nil {
-		panic(err)
-	}
-}
-
-func getConfig() data.Config {
-	fileData, err := os.ReadFile(data.ConfigFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	var config data.Config
-	if err := yaml.Unmarshal(fileData, &config); err != nil {
-		log.Fatal(err)
-	}
-
-	decryptedUsername, decryptedPassword, err := auth.DecryptCredentials(&secretKey, config.Credentials.Username, config.Credentials.Password)
-
-	config.Credentials.Username = decryptedUsername
-	config.Credentials.Password = decryptedPassword
-
-	return config
-}
-func getPersistentData() []data.PersistentPullRequest {
-	if !fileOrFolderExists(data.LogbookFile) {
-		err := os.WriteFile(data.LogbookFile, []byte{}, 0600)
-		if err != nil {
-			fmt.Println("Error creating logbook file")
-		}
-	}
-
-	fileData, err := os.ReadFile(data.LogbookFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	var persistentPrs []data.PersistentPullRequest
-	if err := yaml.Unmarshal(fileData, &persistentPrs); err != nil {
-		log.Fatal(err)
-	}
-	return persistentPrs
 }

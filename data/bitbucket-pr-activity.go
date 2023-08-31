@@ -17,10 +17,12 @@ func HandlePrActivity(activePrs []PullRequest, allSlicesOfActivities [][]Activit
 			handleDifference(activePrs[i], a)
 		}
 	}
+	SavePersistentData()
+
 }
 
 func handleDifference(pr PullRequest, activity Activity) {
-	if !containsActivity(activity) {
+	if !containsActivity(activity.ID) {
 		handleNotifying(pr, activity)
 		updateCurrentPrActivities(pr, activity, 0, 0) // will reset if handled in HandleNotifying
 	}
@@ -38,21 +40,7 @@ func handleNotifying(pr PullRequest, activity Activity) {
 		if prIsClosed(pr) {
 			break
 		}
-		if len(activity.Comment.CommentThread) != 0 {
-			lastComment := activity.Comment.CommentThread[len(activity.Comment.CommentThread)-1]
-			notification.NotifyAboutNewAnswer(lastComment.Author.DisplayName, lastComment.Text, activity.CommentAnchor.Path, pr.Title)
-		} else {
-			if activity.Comment.Severity == "BLOCKER" {
-				if activity.Comment.State == "RESOLVED" {
-					notification.NotifyAboutClosedTask() // TODO: To be implemented
-					break
-				}
-				notification.NotifyAboutNewTask() // TODO: To be implemented
-				break
-			}
-
-		}
-		notification.NotifyAboutNewComment(activity.User.DisplayName, activity.Comment.Text, activity.CommentAnchor.Path, pr.Title)
+		handleCommentLogic(pr, activity)
 		break
 	case "RESCOPED":
 		notification.NotifyAboutNewAmend() // User, Title, REPO. To be implemented
@@ -93,6 +81,33 @@ func handleNotifying(pr PullRequest, activity Activity) {
 	}
 }
 
+func handleCommentLogic(pr PullRequest, activity Activity) {
+	commentThread := activity.Comment.CommentThread
+	if len(commentThread) != 0 {
+		for _, answer := range commentThread {
+			if containsActivity(answer.ID) || authorIsYou(activity) {
+				return
+			}
+			notification.NotifyAboutNewAnswer(answer.Author.DisplayName, answer.Text, activity.CommentAnchor.Path, pr.Title)
+		}
+	}
+	if isTask(activity) {
+		if isTaskClosed(activity) {
+			notification.NotifyAboutClosedTask() // TODO: To be implemented
+		}
+		notification.NotifyAboutNewTask() // TODO: To be implemented
+	}
+	notification.NotifyAboutNewComment(activity.User.DisplayName, activity.Comment.Text, activity.CommentAnchor.Path, pr.Title)
+}
+
+func isTaskClosed(activity Activity) bool {
+	return activity.Comment.State == "RESOLVED"
+}
+
+func isTask(activity Activity) bool {
+	return activity.Comment.Severity == "BLOCKER"
+}
+
 func prIsClosed(pr PullRequest) bool {
 	return pr.State == "DECLINED" || pr.State == "MERGED" || pr.State == "UNAPPROVED" || pr.State == "DELETED"
 }
@@ -111,7 +126,7 @@ func authorIsYou(activity Activity) bool { // NOTE: Different servers use email/
 		email = activity.Comment.CommentThread[len(activity.Comment.CommentThread)-1].Author.EmailAddress
 	}
 
-	return slug == configUsername ||
+	return slug == configUsername || // BUG: This is still letting through a comment in my PR that I made, overview
 		email == configUsername
 }
 
@@ -151,21 +166,17 @@ func getIdxOfLogbook(prId int) int {
 	return -1
 }
 
-func containsActivity(newActivity Activity) bool {
-	var foundComment bool
-	var foundCommentThread bool
+func containsActivity(id int) bool {
+	var foundActivity bool
 
 	for _, persistencePrStruct := range Logbook {
 		for _, activityId := range persistencePrStruct.NotifiedActivityIds {
-			if activityId == newActivity.ID {
-				foundComment = true
-			}
-			if len(newActivity.Comment.CommentThread) != 0 && activityId == newActivity.Comment.CommentThread[0].ID {
-				foundCommentThread = true
+			if activityId == id {
+				foundActivity = true
 			}
 		}
 	}
-	return foundComment && foundCommentThread
+	return foundActivity
 }
 
 type PullRequestActivityResponse struct {

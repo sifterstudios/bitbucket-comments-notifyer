@@ -6,8 +6,6 @@ import (
 	"github.com/sifterstudios/bitbucket-notifier/web"
 )
 
-var secretKey [32]byte
-
 func main() {
 	fmt.Println("Welcome!")
 	fmt.Println("Looking up config file...")
