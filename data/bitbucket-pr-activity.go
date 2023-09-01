@@ -119,7 +119,6 @@ func updateCurrentPrActivities(pr PullRequest, newActivity Activity, timeOpened 
 	idxOfLogbook := getIdxOfLogbook(pr.ID)
 
 	if idxOfLogbook == -1 { // NOTE: PR not found in logbook
-		fmt.Println("Info: PR not found in logbook")
 		Logbook = append(Logbook, PersistentPullRequest{
 			Id:                   pr.ID,
 			NotifiedActivityIds:  []int{newActivity.ID},
@@ -130,11 +129,11 @@ func updateCurrentPrActivities(pr PullRequest, newActivity Activity, timeOpened 
 		return
 	}
 
-	ids := Logbook[idxOfLogbook].NotifiedActivityIds
-	if isActivityNew(ids, newActivity.ID) {
-		ids = append(ids, newActivity.ID)
-	} else {
-		appendAnswers(&ids, newActivity.Comment.CommentThread)
+	if isActivityNew(idxOfLogbook, newActivity.ID) {
+		Logbook[idxOfLogbook].NotifiedActivityIds = append(Logbook[idxOfLogbook].NotifiedActivityIds, newActivity.ID)
+	}
+	if len(newActivity.Comment.CommentThread) != 0 {
+		appendAnswers(idxOfLogbook, newActivity.Comment.CommentThread)
 	}
 	if timeOpened != 0 {
 		Logbook[idxOfLogbook].TimeOpened = timeOpened
@@ -147,20 +146,17 @@ func updateCurrentPrActivities(pr PullRequest, newActivity Activity, timeOpened 
 	}
 }
 
-func appendAnswers(ids *[]int, answers []Comment) {
-	if len(answers) == 0 {
-		return
-	}
+func appendAnswers(idxOfLogbook int, answers []Comment) {
 	for _, answer := range answers {
-		if isActivityNew(*ids, answer.ID) {
-			*ids = append(*ids, answer.ID)
+		if isActivityNew(idxOfLogbook, answer.ID) {
+			Logbook[idxOfLogbook].NotifiedActivityIds = append(Logbook[idxOfLogbook].NotifiedActivityIds, answer.ID)
 		}
 	}
 
 }
 
-func isActivityNew(ids []int, newId int) bool {
-	for _, id := range ids {
+func isActivityNew(idxOfLogbook int, newId int) bool {
+	for _, id := range Logbook[idxOfLogbook].NotifiedActivityIds {
 		if id == newId {
 			return false
 		}
@@ -178,16 +174,14 @@ func getIdxOfLogbook(prId int) int {
 }
 
 func containsActivity(id int) bool {
-	var foundActivity bool
-
 	for _, persistencePrStruct := range Logbook {
 		for _, activityId := range persistencePrStruct.NotifiedActivityIds {
 			if activityId == id {
-				foundActivity = true
+				return true
 			}
 		}
 	}
-	return foundActivity
+	return false
 }
 
 type PullRequestActivityResponse struct {
