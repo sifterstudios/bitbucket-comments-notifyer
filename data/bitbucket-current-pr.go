@@ -3,7 +3,20 @@ package data
 var CurrentPrs []PullRequest
 
 func HandleCurrentPrs(newPrs []PullRequest) {
+	newPrs = filterClosedPrs(newPrs)
 	CurrentPrs = newPrs
+}
+
+func filterClosedPrs(newPrs []PullRequest) []PullRequest {
+	var filteredPrs []PullRequest
+	for _, persistentPr := range Logbook {
+		for _, pr := range newPrs {
+			if persistentPr.Id == pr.ID && persistentPr.TimeFinished != 0 {
+				filteredPrs = append(filteredPrs, pr)
+			}
+		}
+	}
+	return filteredPrs
 }
 
 type ActivePullRequestsResponse struct {

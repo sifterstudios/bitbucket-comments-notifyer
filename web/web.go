@@ -3,13 +3,14 @@ package web
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"reflect"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/gorilla/mux"
 
 	"github.com/sifterstudios/bitbucket-notifier/bitbucket"
 	"github.com/sifterstudios/bitbucket-notifier/data"
@@ -53,6 +54,7 @@ func startScheduledUpdate() {
 		time.Sleep(time.Duration(data.UserConfig.ConfigNotifications.PollingInterval) * time.Minute)
 	}
 }
+
 func getStatsHandler(writer http.ResponseWriter, _ *http.Request) {
 	if data.CurrentPrs == nil {
 		fmt.Println("Error: Could not find any Pull Requests")
@@ -81,6 +83,7 @@ func getConfigHandler(writer http.ResponseWriter, _ *http.Request) {
 		return
 	}
 }
+
 func setConfigHandler(_ http.ResponseWriter, request *http.Request) {
 	err := request.ParseForm()
 	if err != nil {
@@ -102,6 +105,7 @@ func setConfigHandler(_ http.ResponseWriter, request *http.Request) {
 }
 
 func updateHandler(writer http.ResponseWriter, _ *http.Request) {
+	getCount := 0
 	prResponse, err := bitbucket.GetCurrentPullRequestsByUser(data.UserConfig)
 	if err != nil {
 		log.Print(err)
@@ -111,7 +115,8 @@ func updateHandler(writer http.ResponseWriter, _ *http.Request) {
 		data.HandleCurrentPrs(prResponse.Values)
 	}
 
-	activityResponse, err := bitbucket.GetPullRequestsActivity(data.CurrentPrs)
+	activityResponse, err := bitbucket.GetPullRequestsActivity(data.CurrentPrs, &getCount)
+	print("Get count: " + strconv.Itoa(getCount) + "\n")
 	data.HandlePrActivity(data.CurrentPrs, activityResponse)
 
 	uiStats := data.ConvertActivePrResponseToUiStatistics(prResponse.Values)

@@ -2,6 +2,7 @@ package data
 
 import (
 	"fmt"
+
 	"github.com/sifterstudios/bitbucket-notifier/notification"
 )
 
@@ -18,7 +19,6 @@ func HandlePrActivity(activePrs []PullRequest, allSlicesOfActivities [][]Activit
 		}
 	}
 	SavePersistentData()
-
 }
 
 func handleDifference(pr PullRequest, activity Activity) {
@@ -156,7 +156,6 @@ func appendAnswers(ids *[]int, answers []Comment) {
 			*ids = append(*ids, answer.ID)
 		}
 	}
-
 }
 
 func isActivityNew(ids []int, newId int) bool {
