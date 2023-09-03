@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"golang.org/x/term"
 	"gopkg.in/yaml.v2"
 
 	"github.com/sifterstudios/bitbucket-notifier/auth"
@@ -35,8 +36,7 @@ func createAndSaveConfigFile() {
 		return
 	}
 	fmt.Println("Please enter your Bitbucket password:")
-	var password string
-	_, err = fmt.Scanln(&password)
+	password, err := term.ReadPassword(0)
 	if err != nil {
 		return
 	}
