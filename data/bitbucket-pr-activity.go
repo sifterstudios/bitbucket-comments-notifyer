@@ -2,6 +2,7 @@ package data
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/sifterstudios/bitbucket-notifier/notification"
 )
@@ -24,7 +25,11 @@ func HandlePrActivity(activePrs []PullRequest, allSlicesOfActivities [][]Activit
 func handleDifference(pr PullRequest, activity Activity) {
 	if !containsActivity(activity.ID) {
 		handleNotifying(pr, activity)
-		updateCurrentPrActivities(pr, activity, 0, 0)
+		updateCurrentPrActivities(pr, activity, PersistentPullRequest{
+			TimeOpened:           -1,
+			TimeFinished:         -1,
+			DurationOpenToFinish: -1,
+		})
 	}
 }
 
@@ -35,7 +40,12 @@ func handleNotifying(pr PullRequest, activity Activity) {
 	switch activity.Action {
 	case "OPENED":
 		notification.NotifyAboutOpenedPr(pr.FromRef.Repository.Name, activity.User.DisplayName, pr.Title, pr.Description)
-		updateCurrentPrActivities(pr, activity, activity.CreatedDate, 0)
+
+		updateCurrentPrActivities(pr, activity, PersistentPullRequest{
+			TimeOpened: activity.CreatedDate,
+			IsYours:    userIsYou(activity),
+		})
+
 		break
 	case "COMMENTED":
 		if prIsClosed(pr) {
@@ -54,11 +64,15 @@ func handleNotifying(pr PullRequest, activity Activity) {
 		break
 	case "DECLINED":
 		notification.NotifyAboutDeclinedPr(pr.FromRef.Repository.Name, activity.User.DisplayName, pr.Title)
-		updateCurrentPrActivities(pr, activity, 0, activity.CreatedDate)
+		updateCurrentPrActivities(pr, activity, PersistentPullRequest{
+			TimeFinished: activity.CreatedDate,
+		})
 		break
 	case "MERGED":
 		notification.NotifyAboutMergedPr(pr.FromRef.Repository.Name, activity.User.DisplayName, pr.Title)
-		updateCurrentPrActivities(pr, activity, 0, activity.CreatedDate)
+		updateCurrentPrActivities(pr, activity, PersistentPullRequest{
+			TimeFinished: activity.CreatedDate,
+		})
 		break
 	case "REVIEWED":
 		notification.NotifyAboutReviewed(pr.FromRef.Repository.Name, activity.User.DisplayName, pr.Title)
@@ -66,11 +80,20 @@ func handleNotifying(pr PullRequest, activity Activity) {
 	}
 }
 
+func userIsYou(activity Activity) bool {
+	configUsername := string(UserConfig.Credentials.Username)
+	slug := activity.User.Slug
+	email := activity.User.EmailAddress
+
+	return slug == configUsername ||
+		email == configUsername
+}
+
 func handleCommentLogic(pr PullRequest, activity Activity) {
 	commentThread := activity.Comment.CommentThread
 	if len(commentThread) != 0 {
 		for _, answer := range commentThread {
-			if containsActivity(answer.ID) || authorIsYou(activity) {
+			if containsActivity(answer.ID) { // NOTE: Since comments are stacked, we know that if we've reached old comments if true, and don't need to loop through the rest
 				return
 			}
 			notification.NotifyAboutComment(answer.Author.DisplayName, answer.Text, activity.CommentAnchor.Path, pr.Title)
@@ -107,24 +130,24 @@ func authorIsYou(activity Activity) bool { // NOTE: Different servers use email/
 	}
 
 	if len(activity.Comment.CommentThread) != 0 {
-		slug = activity.Comment.CommentThread[len(activity.Comment.CommentThread)-1].Author.Slug
-		email = activity.Comment.CommentThread[len(activity.Comment.CommentThread)-1].Author.EmailAddress
+		slug = activity.Comment.CommentThread[0].Author.Slug // NOTE: For now, only checks the latest comment...
+		email = activity.Comment.CommentThread[0].Author.EmailAddress
 	}
 
 	return slug == configUsername || // BUG: This is still letting through a comment in my PR that I made, overview
 		email == configUsername
 }
 
-func updateCurrentPrActivities(pr PullRequest, newActivity Activity, timeOpened int64, timeClosed int64) {
+func updateCurrentPrActivities(pr PullRequest, newActivity Activity, updatedPr PersistentPullRequest) {
 	idxOfLogbook := getIdxOfLogbook(pr.ID)
 
 	if idxOfLogbook == -1 { // NOTE: PR not found in logbook
 		Logbook = append(Logbook, PersistentPullRequest{
 			Id:                   pr.ID,
 			NotifiedActivityIds:  []int{newActivity.ID},
-			TimeOpened:           timeOpened,
-			TimeFinished:         timeClosed,
-			DurationOpenToFinish: timeClosed - timeOpened,
+			TimeOpened:           updatedPr.TimeOpened,
+			TimeFinished:         updatedPr.TimeFinished,
+			DurationOpenToFinish: int64(math.Max(float64(updatedPr.TimeFinished-updatedPr.TimeOpened), 0)),
 		})
 		return
 	}
@@ -135,15 +158,16 @@ func updateCurrentPrActivities(pr PullRequest, newActivity Activity, timeOpened 
 	if len(newActivity.Comment.CommentThread) != 0 {
 		appendAnswers(idxOfLogbook, newActivity.Comment.CommentThread)
 	}
-	if timeOpened != 0 {
-		Logbook[idxOfLogbook].TimeOpened = timeOpened
+	if updatedPr.TimeOpened > 0 {
+		Logbook[idxOfLogbook].TimeOpened = updatedPr.TimeOpened
 	}
-	if timeClosed != 0 {
-		Logbook[idxOfLogbook].TimeFinished = timeClosed
+	if updatedPr.TimeFinished > 0 {
+		Logbook[idxOfLogbook].TimeFinished = updatedPr.TimeFinished
 	}
-	if timeOpened != 0 && timeClosed != 0 {
-		Logbook[idxOfLogbook].DurationOpenToFinish = timeClosed - timeOpened
+	if updatedPr.TimeOpened > 0 && updatedPr.TimeFinished > 0 {
+		Logbook[idxOfLogbook].DurationOpenToFinish = updatedPr.TimeFinished - updatedPr.TimeOpened
 	}
+	Logbook[idxOfLogbook].IsYours = updatedPr.IsYours
 }
 
 func appendAnswers(idxOfLogbook int, answers []Comment) {

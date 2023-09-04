@@ -36,4 +36,6 @@ type PersistentPullRequest struct {
 	TimeOpened           int64 `yaml:"time_opened"`
 	TimeFinished         int64 `yaml:"time_finished"`
 	DurationOpenToFinish int64 `yaml:"duration_open_to_finish"`
+	IsYours              bool  `yaml:"is_yours"`
+	HaveCommented        bool  `yaml:"have_commented"`
 }

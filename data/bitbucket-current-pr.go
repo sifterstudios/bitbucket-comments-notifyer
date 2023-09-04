@@ -9,14 +9,22 @@ func HandleCurrentPrs(newPrs []PullRequest) {
 
 func filterClosedPrs(newPrs []PullRequest) []PullRequest {
 	var filteredPrs []PullRequest
-	for _, persistentPr := range Logbook {
-		for _, pr := range newPrs {
-			if persistentPr.Id == pr.ID && persistentPr.TimeFinished != 0 {
-				filteredPrs = append(filteredPrs, pr)
-			}
+	for _, pr := range newPrs {
+		if prIsClosedAndNotified(pr) {
+			continue
 		}
+		filteredPrs = append(filteredPrs, pr)
 	}
 	return filteredPrs
+}
+
+func prIsClosedAndNotified(pr PullRequest) bool {
+	for _, persistentPr := range Logbook {
+		if persistentPr.Id == pr.ID && persistentPr.TimeFinished != 0 {
+			return true
+		}
+	}
+	return false
 }
 
 type ActivePullRequestsResponse struct {
