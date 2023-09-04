@@ -2,23 +2,24 @@ package main
 
 import (
 	"fmt"
-	"github.com/sifterstudios/bitbucket-notifier/auth"
 	"log"
 	"os"
 
+	"golang.org/x/term"
 	"gopkg.in/yaml.v2"
 
+	"github.com/sifterstudios/bitbucket-notifier/auth"
 	"github.com/sifterstudios/bitbucket-notifier/data"
 )
 
 func initialize() {
-	if data.FileOrFolderExists(data.SecurityFile) { // TODO: This should be data's responsibility
+	if data.FileOrFolderExists(data.DataFolder) && data.FileOrFolderExists(data.SecurityFile) { // TODO: This should be data's responsibility
 		data.GetSecretKey()
 	} else {
 		data.GetRandomKey()
 		data.CreateAndSaveSecurityFile()
 	}
-	if data.FileOrFolderExists(data.ConfigFile) {
+	if data.FileOrFolderExists(data.ConfigFolder) && data.FileOrFolderExists(data.ConfigFile) {
 		data.UserConfig = data.GetConfig()
 	} else {
 		createAndSaveConfigFile()
@@ -35,8 +36,7 @@ func createAndSaveConfigFile() {
 		return
 	}
 	fmt.Println("Please enter your Bitbucket password:")
-	var password string
-	_, err = fmt.Scanln(&password)
+	password, err := term.ReadPassword(0)
 	if err != nil {
 		return
 	}

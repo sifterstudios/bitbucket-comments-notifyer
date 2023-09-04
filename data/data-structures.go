@@ -1,8 +1,6 @@
 package data
 
-var (
-	UserConfig Config
-)
+var UserConfig Config
 
 type Config struct {
 	Bitbucket struct {

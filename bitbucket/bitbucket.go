@@ -42,12 +42,13 @@ func GetCurrentPullRequestsByUser(config data.Config) (data.ActivePullRequestsRe
 	return jsonData, nil
 }
 
-func GetPullRequestsActivity(prs []data.PullRequest) (response [][]data.Activity, err error) {
+func GetPullRequestsActivity(prs []data.PullRequest, getCount *int) (response [][]data.Activity, err error) {
 	username := string(data.UserConfig.Credentials.Username)
 	password := string(data.UserConfig.Credentials.Password)
 	client.SetBasicAuth(username, password)
 
 	for _, pr := range prs {
+		*getCount++
 		url := getActivityUrl(pr.FromRef.Repository.Project.Key,
 			pr.FromRef.Repository.Name,
 			pr.ID)
