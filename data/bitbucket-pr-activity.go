@@ -101,11 +101,14 @@ func handleCommentLogic(pr PullRequest, activity Activity) {
 	}
 	if isTask(activity) {
 		if isTaskClosed(activity) {
-			notification.NotifyAboutClosedTask(activity.User.DisplayName, activity.Comment.Text, activity.CommentAnchor.Path, pr.Title)
+			notification.NotifyAboutClosedTask(activity.User.DisplayName, activity.Comment.Text,
+				activity.CommentAnchor.Path, pr.Title)
 		}
-		notification.NotifyAboutNewTask(activity.User.DisplayName, activity.Comment.Text, activity.CommentAnchor.Path, pr.Title)
+		notification.NotifyAboutNewTask(activity.User.DisplayName, activity.Comment.Text,
+			activity.CommentAnchor.Path, pr.Title)
 	}
-	notification.NotifyAboutComment(activity.User.DisplayName, activity.Comment.Text, activity.CommentAnchor.Path, pr.Title)
+	notification.NotifyAboutComment(activity.User.DisplayName, activity.Comment.Text,
+		activity.CommentAnchor.Path, pr.Title)
 }
 
 func isTaskClosed(activity Activity) bool {
@@ -164,7 +167,7 @@ func updateCurrentPrActivities(pr PullRequest, newActivity Activity, updatedPr P
 	if updatedPr.TimeFinished > 0 {
 		Logbook[idxOfLogbook].TimeFinished = updatedPr.TimeFinished
 	}
-	if updatedPr.TimeOpened > 0 && updatedPr.TimeFinished > 0 {
+	if Logbook[idxOfLogbook].TimeOpened > 0 && Logbook[idxOfLogbook].TimeFinished > 0 {
 		Logbook[idxOfLogbook].DurationOpenToFinish = updatedPr.TimeFinished - updatedPr.TimeOpened
 	}
 	Logbook[idxOfLogbook].IsYours = updatedPr.IsYours

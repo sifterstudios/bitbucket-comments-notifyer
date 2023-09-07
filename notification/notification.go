@@ -6,7 +6,7 @@ import (
 )
 
 func SendNotification(headline, message string) {
-	cmd := exec.Command("notify-send", headline, message, "-t", "1") // TODO: Add timing of notification as an option in front-end
+	cmd := exec.Command("notify-send", headline, message, "-t", "0") // TODO: Add timing of notification as an option in front-end
 
 	err := cmd.Run()
 	if err != nil {
