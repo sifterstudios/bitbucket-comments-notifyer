@@ -19,11 +19,12 @@ type Notification struct {
 }
 
 type ConfigNotifications struct {
-	PollingInterval int  `yaml:"polling_interval"`
-	Comments        bool `yaml:"comments"`
-	Tasks           bool `yaml:"tasks"`
-	StatusChanges   bool `yaml:"status_changes"`
-	CompletionTime  bool `yaml:"completion_time"`
+	PollingInterval     int  `yaml:"polling_interval"`
+	Comments            bool `yaml:"comments"`
+	Tasks               bool `yaml:"tasks"`
+	StatusChanges       bool `yaml:"status_changes"`
+	CompletionTime      bool `yaml:"completion_time"`
+	FilterOwnActivities bool `yaml:"filter_own_activities"`
 }
 
 type PersistentData struct {

@@ -25,7 +25,7 @@ func HandlePrActivity(activePrs []PullRequest, allSlicesOfActivities [][]Activit
 func handleDifference(pr PullRequest, activity Activity) {
 	if !containsActivity(activity.ID) {
 		handleNotifying(pr, activity)
-		updateCurrentPrActivities(pr, activity, PersistentPullRequest{
+		updateLogbook(pr, activity, PersistentPullRequest{
 			TimeOpened:           -1,
 			TimeFinished:         -1,
 			DurationOpenToFinish: -1,
@@ -34,43 +34,53 @@ func handleDifference(pr PullRequest, activity Activity) {
 }
 
 func handleNotifying(pr PullRequest, activity Activity) {
-	if authorIsYou(activity) { // TODO: Add option to negate this if debugging
+	isYou := isYou(activity.User.Slug, activity.User.EmailAddress)
+	if isYou && UserConfig.ConfigNotifications.FilterOwnActivities {
 		return
 	}
+
 	switch activity.Action {
 	case "OPENED":
 		notification.NotifyAboutOpenedPr(pr.FromRef.Repository.Name, activity.User.DisplayName, pr.Title, pr.Description)
 
-		updateCurrentPrActivities(pr, activity, PersistentPullRequest{
+		updateLogbook(pr, activity, PersistentPullRequest{
 			TimeOpened: activity.CreatedDate,
-			IsYours:    userIsYou(activity),
+			IsYours:    isYou,
 		})
 
 		break
 	case "COMMENTED":
 		if prIsClosed(pr) {
-			break
+			return
 		}
 		handleCommentLogic(pr, activity)
 		break
 	case "RESCOPED":
-		notification.NotifyAboutNewAmend(pr.FromRef.Repository.Name, activity.User.DisplayName, pr.Title, activity.Diff.Destination.Name)
+		notification.NotifyAboutNewAmend(
+			pr.FromRef.Repository.Name,
+			activity.User.DisplayName,
+			pr.Title,
+			activity.Diff.Destination.Name)
 		break
 	case "UPDATED":
-		notification.NotifyAboutNewCommit(pr.FromRef.Repository.Name, activity.User.DisplayName, pr.Title, activity.Diff.Destination.Name)
+		notification.NotifyAboutNewCommit(
+			pr.FromRef.Repository.Name,
+			activity.User.DisplayName,
+			pr.Title,
+			activity.Diff.Destination.Name)
 		break
 	case "APPROVED":
 		notification.NotifyAboutApprovedPr(pr.FromRef.Repository.Name, activity.User.DisplayName, pr.Title)
 		break
 	case "DECLINED":
 		notification.NotifyAboutDeclinedPr(pr.FromRef.Repository.Name, activity.User.DisplayName, pr.Title)
-		updateCurrentPrActivities(pr, activity, PersistentPullRequest{
+		updateLogbook(pr, activity, PersistentPullRequest{
 			TimeFinished: activity.CreatedDate,
 		})
 		break
 	case "MERGED":
 		notification.NotifyAboutMergedPr(pr.FromRef.Repository.Name, activity.User.DisplayName, pr.Title)
-		updateCurrentPrActivities(pr, activity, PersistentPullRequest{
+		updateLogbook(pr, activity, PersistentPullRequest{
 			TimeFinished: activity.CreatedDate,
 		})
 		break
@@ -141,7 +151,13 @@ func authorIsYou(activity Activity) bool { // NOTE: Different servers use email/
 		email == configUsername
 }
 
-func updateCurrentPrActivities(pr PullRequest, newActivity Activity, updatedPr PersistentPullRequest) {
+func isYou(slug, email string) bool {
+	configUsername := string(UserConfig.Credentials.Username)
+	return slug == configUsername ||
+		email == configUsername
+}
+
+func updateLogbook(pr PullRequest, newActivity Activity, updatedPr PersistentPullRequest) {
 	idxOfLogbook := getIdxOfLogbook(pr.ID)
 
 	if idxOfLogbook == -1 { // NOTE: PR not found in logbook
@@ -150,7 +166,9 @@ func updateCurrentPrActivities(pr PullRequest, newActivity Activity, updatedPr P
 			NotifiedActivityIds:  []int{newActivity.ID},
 			TimeOpened:           updatedPr.TimeOpened,
 			TimeFinished:         updatedPr.TimeFinished,
-			DurationOpenToFinish: int64(math.Max(float64(updatedPr.TimeFinished-updatedPr.TimeOpened), 0)),
+			DurationOpenToFinish: getDuration(updatedPr.TimeOpened, updatedPr.TimeFinished),
+			IsYours:              updatedPr.IsYours,
+			HaveCommented:        updatedPr.HaveCommented,
 		})
 		return
 	}
@@ -168,9 +186,18 @@ func updateCurrentPrActivities(pr PullRequest, newActivity Activity, updatedPr P
 		Logbook[idxOfLogbook].TimeFinished = updatedPr.TimeFinished
 	}
 	if Logbook[idxOfLogbook].TimeOpened > 0 && Logbook[idxOfLogbook].TimeFinished > 0 {
-		Logbook[idxOfLogbook].DurationOpenToFinish = updatedPr.TimeFinished - updatedPr.TimeOpened
+		Logbook[idxOfLogbook].DurationOpenToFinish = getDuration(Logbook[idxOfLogbook].TimeOpened, Logbook[idxOfLogbook].TimeFinished)
 	}
-	Logbook[idxOfLogbook].IsYours = updatedPr.IsYours
+	if updatedPr.IsYours {
+		Logbook[idxOfLogbook].IsYours = updatedPr.IsYours
+	}
+	if updatedPr.HaveCommented {
+		Logbook[idxOfLogbook].HaveCommented = updatedPr.HaveCommented
+	}
+}
+
+func getDuration(opened, finished int64) int64 {
+	return int64(math.Max(float64(finished-opened), 0))
 }
 
 func appendAnswers(idxOfLogbook int, answers []Comment) {
