@@ -16,7 +16,6 @@ document.addEventListener("DOMContentLoaded", function () {
   );
   const notifyCompletionCheckbox = document.getElementById("notify-completion");
 
-  // Save Configuration
   saveButton.addEventListener("click", function () {
     savePrefsToBackEnd(
       monitoringFrequencyInput.value,
@@ -30,18 +29,6 @@ document.addEventListener("DOMContentLoaded", function () {
       console.log("Saved preferences");
     });
   });
-
-  function manualUpdate() {
-    getManualUpdateFromBackEnd().then((data) => {
-      if (data) {
-        lastUpdate.textContent = new Date(
-          data.LastUpdate * 1000,
-        ).toLocaleString();
-        activePRComments.textContent = data.NumberOfActivePrComments;
-        activePRTasks.textContent = data.NumberOfActivePrTasks;
-      }
-    });
-  }
 
   function updateStatistics() {
     getStatsFromBackEnd().then((data) => {
@@ -67,7 +54,7 @@ document.addEventListener("DOMContentLoaded", function () {
   setInterval(updateStatistics, 30000);
 
   manualButton.addEventListener("click", function () {
-    manualUpdate();
+    manualUpdate(lastUpdate, activePRComments, activePRTasks);
   });
 
   testButton.addEventListener("click", function () {
@@ -75,6 +62,17 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
+function manualUpdate(lastUpdate, activePRComments, activePRTasks) {
+  getManualUpdateFromBackEnd().then((data) => {
+    if (data) {
+      lastUpdate.textContent = new Date(
+        data.LastUpdate * 1000,
+      ).toLocaleString();
+      activePRComments.textContent = data.NumberOfActivePrComments;
+      activePRTasks.textContent = data.NumberOfActivePrTasks;
+    }
+  });
+}
 function sendNotification() {
   fetch("/send-notification", {
     method: "POST",
@@ -158,7 +156,7 @@ async function savePrefsToBackEnd(
   notifyUnreviewedCheckbox,
 ) {
   try {
-    const response = await fetch("/config", {
+    await fetch("/config", {
       method: "POST",
       body: JSON.stringify({
         PollingInterval: monitoringFrequencyInput,
@@ -173,7 +171,6 @@ async function savePrefsToBackEnd(
         "Content-type": "application/json; charset=UTF-8",
       },
     });
-    console.log(response);
   } catch (error) {
     console.error("Error:", error);
     return null;
