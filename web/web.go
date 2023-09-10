@@ -3,7 +3,6 @@ package web
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -100,6 +99,8 @@ func setConfigHandler(_ http.ResponseWriter, request *http.Request) {
 	newConfig.Tasks = request.Form.Get("notifyTasksCheckbox") == "on"
 	newConfig.StatusChanges = request.Form.Get("notifyStatusChangesCheckbox") == "on"
 	newConfig.CompletionTime = request.Form.Get("notifyCompletionTimeCheckbox") == "on"
+	newConfig.FilterOwnActivities = request.Form.Get("filterOwnActivitiesCheckbox") == "on"
+	newConfig.StickyUnreviewedPRs = request.Form.Get("stickyUnreviewedPRsCheckbox") == "on"
 
 	data.UserConfig.ConfigNotifications = newConfig
 }
@@ -108,7 +109,7 @@ func updateHandler(writer http.ResponseWriter, _ *http.Request) {
 	getCount := 0
 	prResponse, err := bitbucket.GetCurrentPullRequestsByUser(data.UserConfig)
 	if err != nil {
-		log.Print(err)
+		print("Error: Could not get a response from Bitbucket:\n" + err.Error() + "\n")
 	}
 
 	if !reflect.DeepEqual(prResponse.Values, data.CurrentPrs) {
@@ -127,7 +128,7 @@ func updateHandler(writer http.ResponseWriter, _ *http.Request) {
 		jsonUiStats, err := json.Marshal(uiStats)
 		_, err = writer.Write(jsonUiStats)
 		if err != nil {
-			return
+			print("Error: Could not write response from updateHandler:\n" + err.Error() + "\n")
 		}
 	}
 }
@@ -141,6 +142,6 @@ func sendNotificationHandler(writer http.ResponseWriter, _ *http.Request) {
 	writer.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(writer).Encode(response)
 	if err != nil {
-		return
+		print("Error: Could not write response from sendNotificationHandler:\n" + err.Error() + "\n")
 	}
 }

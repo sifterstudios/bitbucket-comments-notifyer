@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="EN">
   <head>
     <title>Bitbucket Monitor Configuration</title>
@@ -61,8 +61,28 @@
           name="notification"
           value="status"
         />
-        <label class="checkbox-text" for="notify-status"
+        <label class="checkbox-text" for="notify-completion"
           >Notify of completion time (time from PR start to merge)</label
+        >
+      </div>
+      <div>
+        <input
+          type="checkbox"
+          id="notify-filter-you"
+          name="notification"
+          value="status"
+        />
+        <label class="checkbox-text" for="notify-filter-you">Notify </label>
+      </div>
+      <div>
+        <input
+          type="checkbox"
+          id="notify-unreviewed"
+          name="notification"
+          value="status"
+        />
+        <label class="checkbox-text" for="notify-unreviewed"
+          >Notify of PRs that have no comments/status changed</label
         >
       </div>
     </div>

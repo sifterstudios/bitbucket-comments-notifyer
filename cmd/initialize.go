@@ -33,19 +33,22 @@ func createAndSaveConfigFile() {
 	var username string
 	_, err := fmt.Scanln(&username)
 	if err != nil {
-		return
+		print("Error: Couldn't read what you wrote. Something is terribly wrong.")
+		os.Exit(1)
 	}
 	fmt.Println("Please enter your Bitbucket password:")
 	password, err := term.ReadPassword(0)
 	if err != nil {
-		return
+		print("Error: Couldn't read what you wrote. Something is terribly wrong.")
+		os.Exit(1)
 	}
 
 	fmt.Println("Please enter the full address for the bitbucket server(e.g: https://bitbucket.example.com):")
 	var address string
 	_, err = fmt.Scanln(&address)
 	if err != nil {
-		return
+		print("Error: Couldn't read what you wrote. Something is terribly wrong.")
+		os.Exit(1)
 	}
 
 	encryptedUsername, encryptedPassword, err := auth.EncryptCredentials(
@@ -53,7 +56,8 @@ func createAndSaveConfigFile() {
 		[]byte(password),
 		&data.SecretKey)
 	if err != nil {
-		panic(err)
+		print("Error: Couldn't Encrypt username or password.")
+		os.Exit(1)
 	}
 
 	data.UserConfig.Credentials.Username = encryptedUsername
@@ -66,12 +70,15 @@ func createAndSaveConfigFile() {
 
 	configFile, err := yaml.Marshal(data.UserConfig)
 	if err != nil {
-		log.Fatal(err)
+		print("Error: Couldn't marshal yaml for config file")
+		os.Exit(1)
 	}
 
 	err = os.WriteFile(data.ConfigFile, configFile, 0600)
 	if err != nil {
-		log.Fatal(err)
+		print(`Error: Couldn't write config file to harddrive. 
+			Do you have sufficient permissions where the program is located?`)
+		os.Exit(1)
 	}
 
 	data.UserConfig.Credentials.Username = []byte(username)
@@ -84,4 +91,6 @@ func getDefaultSettings(config *data.Config) {
 	config.ConfigNotifications.Tasks = true
 	config.ConfigNotifications.StatusChanges = true
 	config.ConfigNotifications.CompletionTime = true
+	config.ConfigNotifications.FilterOwnActivities = false
+	config.ConfigNotifications.StickyUnreviewedPRs = true
 }

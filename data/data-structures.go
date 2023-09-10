@@ -25,6 +25,7 @@ type ConfigNotifications struct {
 	StatusChanges       bool `yaml:"status_changes"`
 	CompletionTime      bool `yaml:"completion_time"`
 	FilterOwnActivities bool `yaml:"filter_own_activities"`
+	StickyUnreviewedPRs bool `yaml:"sticky_unreviewed_prs"`
 }
 
 type PersistentData struct {
