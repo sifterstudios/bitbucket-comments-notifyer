@@ -103,7 +103,7 @@ func handleCommentLogic(pr PullRequest, activity Activity) {
 	commentThread := activity.Comment.CommentThread
 	if len(commentThread) != 0 {
 		for _, answer := range commentThread {
-			if containsActivity(answer.ID) { // NOTE: Since comments are stacked, we know that if we've reached old comments if true, and don't need to loop through the rest
+			if containsActivity(answer.ID) { // NOTE: Since comments are stacked, we know that we've reached old comments if true, and don't need to loop through the rest
 				return
 			}
 			notification.NotifyAboutComment(answer.Author.DisplayName, answer.Text, activity.CommentAnchor.Path, pr.Title)
@@ -147,7 +147,7 @@ func authorIsYou(activity Activity) bool { // NOTE: Different servers use email/
 		email = activity.Comment.CommentThread[0].Author.EmailAddress
 	}
 
-	return slug == configUsername || // BUG: This is still letting through a comment in my PR that I made, overview
+	return slug == configUsername ||
 		email == configUsername
 }
 
