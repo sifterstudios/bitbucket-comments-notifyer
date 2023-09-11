@@ -10,11 +10,10 @@ func SendNotification(headline, message string) {
 
 	err := cmd.Run()
 	if err != nil {
-		print(err)
+		print("Error: Not able to run command for sending notification:\n" + err.Error())
 	}
-	//fmt.Println("Notification sent: ", headline, message)
-
 }
+
 func NotifyAboutOpenedPr(repo string, user string, prTitle string, prDesc string) {
 	SendNotification(fmt.Sprintf(`New PR by %s on %s`, user, repo),
 		fmt.Sprintf(`%s:
@@ -41,6 +40,7 @@ func NotifyAboutClosedTask(authorName string, message string, filePath, prTitle 
 		fmt.Sprintf(`%s: 
 %s`, filePath, message))
 }
+
 func NotifyAboutNewAmend(repo string, user string, prTitle string, commit string) {
 	SendNotification(fmt.Sprintf(`New amend by %s in %s`, user, repo),
 		fmt.Sprintf(`PR: %s:
@@ -70,6 +70,11 @@ func NotifyAboutMergedPr(repo string, user string, prTitle string) {
 
 func NotifyAboutReviewed(repo string, user string, prTitle string) {
 	SendNotification(fmt.Sprintf(`PR set to NEEDS WORK by %s in %s`, user, repo),
+		fmt.Sprintf(`PR: %s`, prTitle))
+}
+
+func NotifyAboutUnreviewedPr(user string, prTitle string) {
+	SendNotification(fmt.Sprintf(`PR by %s has no comments or status`, user),
 		fmt.Sprintf(`PR: %s`, prTitle))
 }
 

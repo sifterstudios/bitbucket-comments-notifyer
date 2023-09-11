@@ -1,8 +1,8 @@
 package data
 
 import (
-	"fmt"
 	"math"
+	"os"
 
 	"github.com/sifterstudios/bitbucket-notifier/notification"
 )
@@ -11,8 +11,8 @@ var Logbook []PersistentPullRequest
 
 func HandlePrActivity(activePrs []PullRequest, allSlicesOfActivities [][]Activity) {
 	if len(activePrs) != len(allSlicesOfActivities) {
-		fmt.Println("Error: Mismatch of PRs and slices of activities returned")
-		return
+		print("Error: Mismatch of PRs and slices of activities returned")
+		os.Exit(1)
 	}
 	for i, sliceOfActivities := range allSlicesOfActivities {
 		for _, a := range sliceOfActivities {
@@ -35,9 +35,9 @@ func handleDifference(pr PullRequest, activity Activity) {
 
 func handleNotifying(pr PullRequest, activity Activity) {
 	isYou := isYou(activity.User.Slug, activity.User.EmailAddress)
-	if isYou && UserConfig.ConfigNotifications.FilterOwnActivities {
-		return
-	}
+	// if isYou && UserConfig.ConfigNotifications.FilterOwnActivities {
+	// 	return
+	// }
 
 	switch activity.Action {
 	case "OPENED":

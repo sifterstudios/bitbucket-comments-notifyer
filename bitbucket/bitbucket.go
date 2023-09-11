@@ -13,6 +13,12 @@ import (
 
 var client = resty.New()
 
+const (
+	placeholderProjectKey = "projectname"
+	placeholderRepoName   = "reponame"
+	placeholderPrId       = "PR-id"
+)
+
 func GetCurrentPullRequestsByUser(config data.Config) (data.ActivePullRequestsResponse, error) {
 	apiUrl := config.Bitbucket.ServerUrl + data.CurrentPullRequestsApiPath
 	username := string(config.Credentials.Username)
@@ -54,11 +60,14 @@ func GetPullRequestsActivity(prs []data.PullRequest, getCount *int) (response []
 			pr.ID)
 		r, err := client.R().Get(url)
 		if err != nil {
-			panic(err)
+			print("Error: Couldn't get activity for PR " + strconv.Itoa(pr.ID) + "\n" + err.Error())
 		}
 
 		jsonData := data.PullRequestActivityResponse{}
 		err = json.Unmarshal(r.Body(), &jsonData)
+		if err != nil {
+			print("Error: Couldn't unmarshal activity for PR " + strconv.Itoa(pr.ID) + "\n" + err.Error())
+		}
 
 		response = append(response, jsonData.Values)
 	}
@@ -70,9 +79,9 @@ func getActivityUrl(key string, name string, id int) (url string) {
 	url = data.UserConfig.Bitbucket.ServerUrl + data.PullRequestActivitiesApiPath
 
 	replacements := map[string]string{
-		"projectname": key,
-		"reponame":    name,
-		"PR-id":       strconv.Itoa(id),
+		placeholderProjectKey: key,
+		placeholderRepoName:   name,
+		placeholderPrId:       strconv.Itoa(id),
 	}
 
 	for placeholder, replacement := range replacements {
