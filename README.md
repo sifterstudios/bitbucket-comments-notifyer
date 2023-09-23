@@ -69,14 +69,14 @@
 ### Built With
 
 - [Golang](https://go.dev/)
-- [Notify-send](https://developer.gnome.org/notification-spec/)
-- [Bitbucket API](https://docs.atlassian.com/bitbucket-server/rest/7.8.0/bitbucket-rest.html#idp62)
-- [Resty](https://github.com/go-resty/resty/v2)
+- [Notify-send](https://manpages.ubuntu.com/manpages/focal/man1/notify-send.1.html)
+- [Bitbucket API](https://docs.atlassian.com/bitbucket-server/rest/7.8.0/bitbucket-rest.html)
+- [Resty](https://github.com/go-resty/resty/)
 - [Crypto](https://golang.org/pkg/crypto/)
-- [Term](https://golang.org/pkg/term/)
+- [Term](https://pkg.go.dev/golang.org/x/term)
 - [Net](https://golang.org/pkg/net/)
 - [Sys](https://golang.org/pkg/sys/)
-- [Yaml v2](https://gopkg.in/yaml.v2)
+- [go-yaml](https://github.com/go-yaml/yaml)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
