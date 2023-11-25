@@ -24,4 +24,4 @@ go.work
 data/.securi.ty
 config/config.yaml
 data/logbook.yaml
-data/logbook.yaml
+cmd/cmd
